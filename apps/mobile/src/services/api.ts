@@ -135,12 +135,39 @@ export const api = {
   },
 
   // Проверка OTP кода
-  verifyAuthCode: async (phone: string, code: string) => {
+  verifyAuthCode: async (phone: string, code: string, fullName?: string) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code }),
+      body: JSON.stringify({ phone, code, fullName }),
+    });
+    return res.json();
+  },
+
+  // Вход для верифицированного бизнеса по логину и паролю
+  businessLogin: async (login: string, password: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/business-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password }),
+    });
+    return res.json();
+  },
+
+  // Отправка заявки на подключение бизнеса с видео-подтверждением
+  submitBusinessApplication: async (payload: {
+    phone: string;
+    salonName: string;
+    category: string;
+    address: string;
+    videoName: string;
+  }) => {
+    const res = await fetch(`${API_BASE_URL}/api/business/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
     return res.json();
   },
 };
+

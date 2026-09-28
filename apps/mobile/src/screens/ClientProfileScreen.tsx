@@ -62,27 +62,6 @@ export const ClientProfileScreen: React.FC<ClientProfileScreenProps> = ({
         )}
       </View>
 
-      {/* ГЛАВНАЯ КАРТОЧКА: ПЕРЕКЛЮЧИТЬСЯ В БИЗНЕС */}
-      <TouchableOpacity
-        style={styles.businessSwitchCard}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onSwitchToBusiness();
-        }}
-        activeOpacity={0.85}
-      >
-        <View style={styles.switchIconBox}>
-          <Briefcase size={22} color="#ffffff" />
-        </View>
-        <View style={styles.switchTextBox}>
-          <Text style={styles.switchTitle}>DIKIDI Business</Text>
-          <Text style={styles.switchSub}>
-            Журнал записей, касса и управление клиентами для мастеров и салонов
-          </Text>
-        </View>
-        <ChevronRight size={18} color="#ffffff" />
-      </TouchableOpacity>
-
       {/* Настройки и информация */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>СЕРВИС И ПОДДЕРЖКА</Text>
@@ -110,6 +89,20 @@ export const ClientProfileScreen: React.FC<ClientProfileScreenProps> = ({
           <Text style={styles.menuTitle}>Политика конфиденциальности</Text>
           <ChevronRight size={16} color="#8e8e93" />
         </View>
+
+        {/* Неприметный пункт для партнеров */}
+        <TouchableOpacity
+          style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.05)" }]}
+          onPress={onSwitchToBusiness}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: "#f5f5f7" }]}>
+            <Briefcase size={16} color="#8e8e93" />
+          </View>
+          <Text style={[styles.menuTitle, { color: "#8e8e93", fontSize: 12 }]}>
+            Для партнеров: DIKIDI Business
+          </Text>
+          <ChevronRight size={14} color="#8e8e93" />
+        </TouchableOpacity>
       </View>
 
       {/* Выход из аккаунта */}

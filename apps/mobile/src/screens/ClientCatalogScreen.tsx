@@ -33,12 +33,10 @@ const CATEGORIES = [
 
 interface ClientCatalogScreenProps {
   onSelectSalonForBooking: (salon: Salon, initialService?: Service) => void;
-  onSwitchToBusiness: () => void;
 }
 
 export const ClientCatalogScreen: React.FC<ClientCatalogScreenProps> = ({
   onSelectSalonForBooking,
-  onSwitchToBusiness,
 }) => {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,24 +85,6 @@ export const ClientCatalogScreen: React.FC<ClientCatalogScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Верхний баннер переключения для мастеров */}
-      <TouchableOpacity
-        style={styles.businessBanner}
-        onPress={onSwitchToBusiness}
-        activeOpacity={0.8}
-      >
-        <View style={styles.bannerLeft}>
-          <View style={styles.bannerIconBox}>
-            <Briefcase size={14} color="#111111" />
-          </View>
-          <View>
-            <Text style={styles.bannerTitle}>Вы мастер или салон?</Text>
-            <Text style={styles.bannerSub}>Перейти в DIKIDI Business CRM</Text>
-          </View>
-        </View>
-        <ChevronRight size={16} color="#8e8e93" />
-      </TouchableOpacity>
-
       {/* Поисковая строка */}
       <View style={styles.searchWrapper}>
         <View style={styles.searchContainer}>

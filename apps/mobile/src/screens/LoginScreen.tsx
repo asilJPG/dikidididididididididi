@@ -9,23 +9,26 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { ShieldCheck, ArrowRight, Sparkles } from "lucide-react-native";
+import { ArrowRight, ChevronLeft, ShieldCheck } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { api } from "../services/api";
 import { authStorage } from "../services/auth";
-import { User, AppMode } from "../types";
+import { User } from "../types";
 
 interface LoginScreenProps {
-  onLoginSuccess: (user: User, preferredMode?: AppMode) => void;
-  onContinueAsGuest?: () => void;
+  onLoginSuccess: (user: User, isBusiness?: boolean) => void;
+  onOpenBusinessAuth: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLoginSuccess,
-  onContinueAsGuest,
+  onOpenBusinessAuth,
 }) => {
-  const [step, setStep] = useState<"phone" | "code">("phone");
+  const [step, setStep] = useState<"phone" | "code" | "register">("phone");
   const [phone, setPhone] = useState("+998 ");
   const [code, setCode] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -49,6 +52,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         setDevCode(res.devCode);
       }
       setStep("code");
+      Haptics.selectionAsync();
     } catch {
       setError("Ошибка сети при отправке кода");
     } finally {
@@ -73,10 +77,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       }
 
       if (res.user) {
+        // Если имя не заполнено (новый пользователь), переводим на шаг ввода имени
+        if (!res.user.fullName || res.user.fullName === "Пользователь") {
+          setStep("register");
+          return;
+        }
+
         await authStorage.setUser(res.user);
-        // Если у пользователя есть салон, открываем бизнес, иначе клиентский режим
         const hasSalon = res.user.ownedSalons && res.user.ownedSalons.length > 0;
-        onLoginSuccess(res.user, hasSalon ? "business" : "client");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onLoginSuccess(res.user, hasSalon);
       }
     } catch {
       setError("Ошибка при проверке кода");
@@ -85,16 +95,42 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  const handleQuickLogin = async (demoPhone: string, preferredMode: AppMode) => {
+  const handleCompleteClientRegistration = async () => {
+    if (!fullName.trim()) {
+      setError("Пожалуйста, введите ваше имя");
+      return;
+    }
+
     setLoading(true);
+    setError("");
+
     try {
-      const res = await api.verifyAuthCode(demoPhone, "7777");
+      // Сохраняем имя клиента через повторную валидацию с fullName
+      const res = await api.verifyAuthCode(phone, code || "7777", fullName.trim());
       if (res.user) {
         await authStorage.setUser(res.user);
-        onLoginSuccess(res.user, preferredMode);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onLoginSuccess(res.user, false);
       }
     } catch {
-      setError("Ошибка демо-входа");
+      setError("Ошибка сохранения профиля");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Быстрый демо-вход клиента
+  const handleQuickClientLogin = async () => {
+    setLoading(true);
+    try {
+      const res = await api.verifyAuthCode("+998909998877", "7777", "Жасур Каримов");
+      if (res.user) {
+        await authStorage.setUser(res.user);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onLoginSuccess(res.user, false);
+      }
+    } catch {
+      setError("Ошибка входа");
     } finally {
       setLoading(false);
     }
@@ -112,13 +148,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </View>
           <Text style={styles.title}>DIKIDI</Text>
           <Text style={styles.subtitle}>
-            Единое приложение для клиентов и мастеров Узбекистана
+            Онлайн-запись в салоны красоты и барбершопы Узбекистана
           </Text>
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {step === "phone" ? (
+        {/* ШАГ 1: ВВОД ТЕЛЕФОНА */}
+        {step === "phone" && (
           <View style={styles.form}>
             <Text style={styles.label}>НОМЕР ТЕЛЕФОНА</Text>
             <TextInput
@@ -148,18 +185,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               )}
             </TouchableOpacity>
 
-            {onContinueAsGuest && (
+            {/* Быстрый демо-вход клиента */}
+            <View style={styles.demoSection}>
               <TouchableOpacity
-                onPress={onContinueAsGuest}
-                style={styles.guestBtn}
+                onPress={handleQuickClientLogin}
+                style={styles.demoBtn}
               >
-                <Text style={styles.guestBtnText}>Продолжить без входа (Каталог)</Text>
+                <View>
+                  <Text style={styles.demoBtnText}>Быстрый демо-вход как клиент</Text>
+                  <Text style={styles.demoBtnPhone}>Жасур Каримов (+998 90 999-88-77)</Text>
+                </View>
+                <ArrowRight size={14} color="#8e8e93" />
               </TouchableOpacity>
-            )}
+            </View>
           </View>
-        ) : (
+        )}
+
+        {/* ШАГ 2: ВВОД 4-ЗНАЧНОГО КОДА */}
+        {step === "code" && (
           <View style={styles.form}>
-            <Text style={styles.label}>4-ЗНАЧНЫЙ КОД</Text>
+            <Text style={styles.label}>4-ЗНАЧНЫЙ КОД ИЗ SMS</Text>
             <TextInput
               style={[styles.input, styles.codeInput]}
               placeholder="0000"
@@ -199,35 +244,74 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               }}
               style={styles.backBtn}
             >
-              <Text style={styles.backBtnText}>Изменить номер</Text>
+              <Text style={styles.backBtnText}>Изменить номер телефона</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Быстрый вход для демо */}
-        <View style={styles.demoSection}>
-          <Text style={styles.demoTitle}>БЫСТРЫЙ ТЕСТОВЫЙ ВХОД</Text>
+        {/* ШАГ 3: БЫСТРАЯ РЕГИСТРАЦИЯ НОВОГО КЛИЕНТА */}
+        {step === "register" && (
+          <View style={styles.form}>
+            <Text style={styles.stepTitle}>Завершение регистрации</Text>
+            <Text style={styles.stepSub}>Укажите ваше имя для записи к мастерам</Text>
 
-          <TouchableOpacity
-            onPress={() => handleQuickLogin("+998901234567", "business")}
-            style={styles.demoBtn}
-          >
-            <View>
-              <Text style={styles.demoBtnText}>💼 Bro Barbershop (Мастер / Бизнес)</Text>
-              <Text style={styles.demoBtnPhone}>+998 90 123-45-67</Text>
+            <View style={{ gap: 6 }}>
+              <Text style={styles.label}>КАК ВАС ЗОВУТ?</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Иван или Сардор"
+                placeholderTextColor="#999"
+                value={fullName}
+                onChangeText={setFullName}
+              />
             </View>
-            <ArrowRight size={14} color="#8e8e93" />
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => handleQuickLogin("+998909998877", "client")}
-            style={[styles.demoBtn, { marginTop: 6 }]}
-          >
-            <View>
-              <Text style={styles.demoBtnText}>💇 Жасур Каримов (Клиент)</Text>
-              <Text style={styles.demoBtnPhone}>+998 90 999-88-77</Text>
+            <View style={{ gap: 6 }}>
+              <Text style={styles.label}>ПОЛ (ДЛЯ РЕКОМЕНДАЦИЙ УСЛУГ)</Text>
+              <View style={styles.genderRow}>
+                <TouchableOpacity
+                  style={[styles.genderBtn, gender === "MALE" && styles.genderBtnActive]}
+                  onPress={() => setGender("MALE")}
+                >
+                  <Text style={[styles.genderBtnText, gender === "MALE" && styles.genderBtnTextActive]}>
+                    Мужской
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.genderBtn, gender === "FEMALE" && styles.genderBtnActive]}
+                  onPress={() => setGender("FEMALE")}
+                >
+                  <Text style={[styles.genderBtnText, gender === "FEMALE" && styles.genderBtnTextActive]}>
+                    Женский
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <ArrowRight size={14} color="#8e8e93" />
+
+            <TouchableOpacity
+              onPress={handleCompleteClientRegistration}
+              disabled={loading}
+              style={[styles.primaryBtn, loading && { opacity: 0.6 }]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.primaryBtnText}>Начать пользоваться</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* НЕПРИМЕТНАЯ КНОПКА ДЛЯ БИЗНЕСА В САМОМ НИЗУ */}
+        <View style={styles.businessLinkSection}>
+          <TouchableOpacity
+            onPress={onOpenBusinessAuth}
+            style={styles.businessLinkBtn}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.businessLinkText}>
+              Для мастеров и салонов: вход в DIKIDI Business →
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -273,10 +357,10 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
     color: "#111111",
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 12,
@@ -284,6 +368,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: "center",
     lineHeight: 16,
+    paddingHorizontal: 8,
   },
   form: {
     gap: 12,
@@ -336,17 +421,42 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     color: "#ffffff",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
-  guestBtn: {
-    alignItems: "center",
-    paddingVertical: 8,
+  stepTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111111",
   },
-  guestBtnText: {
+  stepSub: {
     fontSize: 12,
-    color: "#2563eb",
+    color: "#8e8e93",
+    marginTop: -6,
+    marginBottom: 6,
+  },
+  genderRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  genderBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#f5f5f7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  genderBtnActive: {
+    backgroundColor: "#111111",
+  },
+  genderBtnText: {
+    fontSize: 12,
     fontWeight: "600",
+    color: "#8e8e93",
+  },
+  genderBtnTextActive: {
+    color: "#ffffff",
   },
   backBtn: {
     alignItems: "center",
@@ -364,25 +474,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   demoSection: {
-    marginTop: 20,
-    paddingTop: 16,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-  },
-  demoTitle: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#8e8e93",
-    letterSpacing: 0.6,
-    textAlign: "center",
-    marginBottom: 8,
+    borderTopColor: "rgba(0,0,0,0.05)",
   },
   demoBtn: {
     padding: 12,
     borderRadius: 14,
     backgroundColor: "#f5f5f7",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -395,6 +495,21 @@ const styles = StyleSheet.create({
   demoBtnPhone: {
     fontSize: 10,
     color: "#8e8e93",
-    marginTop: 1,
+    marginTop: 2,
+  },
+  businessLinkSection: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.06)",
+    alignItems: "center",
+  },
+  businessLinkBtn: {
+    paddingVertical: 4,
+  },
+  businessLinkText: {
+    fontSize: 11,
+    color: "#8e8e93",
+    fontWeight: "500",
   },
 });

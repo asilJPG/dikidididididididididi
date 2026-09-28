@@ -6,9 +6,6 @@ import {
   ActivityIndicator,
   StatusBar,
   Platform,
-  TouchableOpacity,
-  Text,
-  Modal,
 } from "react-native";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
@@ -27,6 +24,7 @@ import { JournalScreen } from "./src/screens/JournalScreen";
 import { ClientsScreen } from "./src/screens/ClientsScreen";
 import { FinanceScreen } from "./src/screens/FinanceScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { BusinessAuthModal } from "./src/screens/BusinessAuthModal";
 
 // Экраны клиента
 import { ClientCatalogScreen } from "./src/screens/ClientCatalogScreen";
@@ -34,7 +32,7 @@ import { ClientAppointmentsScreen } from "./src/screens/ClientAppointmentsScreen
 import { ClientProfileScreen } from "./src/screens/ClientProfileScreen";
 import { ClientBookingModal } from "./src/components/ClientBookingModal";
 
-// Логин
+// Экран входа
 import { LoginScreen } from "./src/screens/LoginScreen";
 
 export default function App() {
@@ -54,20 +52,22 @@ export default function App() {
   const [bookingSalon, setBookingSalon] = useState<Salon | null>(null);
   const [bookingService, setBookingService] = useState<Service | null>(null);
 
-  // Модалка авторизации
-  const [loginModalVisible, setLoginModalVisible] = useState(false);
+  // Модалка для бизнеса (логин по паролю или подача заявки с видео)
+  const [businessAuthVisible, setBusinessAuthVisible] = useState(false);
 
-  // Инициализация при запуске
+  // Проверка сохраненной сессии при запуске
   useEffect(() => {
     const initApp = async () => {
       try {
         const user = await authStorage.getUser();
         if (user) {
           setCurrentUser(user);
-          await loadSalonData(user);
-          // Если у пользователя есть салон, открываем в режиме бизнеса
-          if (user.ownedSalons && user.ownedSalons.length > 0) {
+          const hasSalon = user.ownedSalons && user.ownedSalons.length > 0;
+          if (hasSalon || user.role === "SALON_OWNER" || user.role === "MASTER") {
             setMode("business");
+            await loadSalonData(user);
+          } else {
+            setMode("client");
           }
         }
       } catch (e) {
@@ -97,21 +97,29 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = async (user: User, preferredMode?: AppMode) => {
+  // Успешный вход через стандартную форму по SMS
+  const handleLoginSuccess = async (user: User, isBusiness: boolean = false) => {
     setCurrentUser(user);
-    setLoginModalVisible(false);
-    await loadSalonData(user);
-
-    if (preferredMode) {
-      setMode(preferredMode);
-    } else if (user.ownedSalons && user.ownedSalons.length > 0) {
+    if (isBusiness) {
       setMode("business");
+      await loadSalonData(user);
     } else {
       setMode("client");
+      setActiveClientTab("catalog");
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
+  // Успешный вход через форму бизнеса (по паролю)
+  const handleBusinessLoginSuccess = async (user: User) => {
+    setCurrentUser(user);
+    setMode("business");
+    setActiveBusinessTab("journal");
+    await loadSalonData(user);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  // Выход из аккаунта -> возврат на первый экран (LoginScreen)
   const handleLogout = async () => {
     await authStorage.removeUser();
     setCurrentUser(null);
@@ -122,17 +130,7 @@ export default function App() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleSwitchMode = (newMode: AppMode) => {
-    if (newMode === "business" && !currentUser) {
-      // Для бизнеса просим войти
-      setLoginModalVisible(true);
-      return;
-    }
-    Haptics.selectionAsync();
-    setMode(newMode);
-  };
-
-  // Открытие модалки онлайн-записи клиентом
+  // Открытие онлайн-бронирования клиентом
   const handleOpenBooking = (salon: Salon, service?: Service) => {
     setBookingSalon(salon);
     setBookingService(service || null);
@@ -152,6 +150,24 @@ export default function App() {
     );
   }
 
+  // ЕСЛИ НЕ АВТОРИЗОВАН — ПЕРВЫЙ ЭКРАН ЭТО ЛОГИН
+  if (!currentUser) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ExpoStatusBar style="dark" />
+        <LoginScreen
+          onLoginSuccess={handleLoginSuccess}
+          onOpenBusinessAuth={() => setBusinessAuthVisible(true)}
+        />
+        <BusinessAuthModal
+          visible={businessAuthVisible}
+          onClose={() => setBusinessAuthVisible(false)}
+          onLoginSuccess={handleBusinessLoginSuccess}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const currentTab = mode === "business" ? activeBusinessTab : activeClientTab;
 
   const handleSelectTab = (tab: TabKey) => {
@@ -166,41 +182,8 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <ExpoStatusBar style="dark" />
 
-      {/* Верхний переключатель режимов [ Клиент | Бизнес ] */}
-      <View style={styles.topModeBar}>
-        <View style={styles.modeToggle}>
-          <TouchableOpacity
-            style={[styles.modeToggleBtn, mode === "client" && styles.modeToggleBtnActive]}
-            onPress={() => handleSwitchMode("client")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                mode === "client" && styles.modeToggleTextActive,
-              ]}
-            >
-              💇 Клиент
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeToggleBtn, mode === "business" && styles.modeToggleBtnActive]}
-            onPress={() => handleSwitchMode("business")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                mode === "business" && styles.modeToggleTextActive,
-              ]}
-            >
-              💼 Бизнес (CRM)
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <View style={styles.container}>
-        {/* РЕЖИМ БИЗНЕСА */}
+        {/* РЕЖИМ БИЗНЕСА (ТОЛЬКО ДЛЯ ВЕРИФИЦИРОВАННЫХ САЛОНОВ И МАСТЕРОВ) */}
         {mode === "business" && (
           <>
             {activeBusinessTab === "journal" && <JournalScreen salon={currentSalon} />}
@@ -211,34 +194,31 @@ export default function App() {
                 salon={currentSalon}
                 currentUser={currentUser}
                 onLogout={handleLogout}
-                onSwitchToClient={() => handleSwitchMode("client")}
+                onSwitchToClient={() => setMode("client")}
               />
             )}
           </>
         )}
 
-        {/* РЕЖИМ КЛИЕНТА */}
+        {/* РЕЖИМ КЛИЕНТА (ОСНОВНОЙ ДЛЯ 99% ПОЛЬЗОВАТЕЛЕЙ) */}
         {mode === "client" && (
           <>
             {activeClientTab === "catalog" && (
-              <ClientCatalogScreen
-                onSelectSalonForBooking={handleOpenBooking}
-                onSwitchToBusiness={() => handleSwitchMode("business")}
-              />
+              <ClientCatalogScreen onSelectSalonForBooking={handleOpenBooking} />
             )}
             {activeClientTab === "my-bookings" && (
               <ClientAppointmentsScreen
                 currentUser={currentUser}
                 onGoToCatalog={() => setActiveClientTab("catalog")}
-                onRequireLogin={() => setLoginModalVisible(true)}
+                onRequireLogin={() => {}}
               />
             )}
             {activeClientTab === "client-profile" && (
               <ClientProfileScreen
                 currentUser={currentUser}
-                onSwitchToBusiness={() => handleSwitchMode("business")}
+                onSwitchToBusiness={() => setBusinessAuthVisible(true)}
                 onLogout={handleLogout}
-                onRequireLogin={() => setLoginModalVisible(true)}
+                onRequireLogin={() => {}}
               />
             )}
           </>
@@ -248,7 +228,7 @@ export default function App() {
         <TabBar mode={mode} currentTab={currentTab} onSelectTab={handleSelectTab} />
       </View>
 
-      {/* Модалка онлайн-бронирования */}
+      {/* Модалка бронирования */}
       <ClientBookingModal
         visible={bookingModalVisible}
         salon={bookingSalon}
@@ -258,20 +238,12 @@ export default function App() {
         onBookingSuccess={handleBookingCompleted}
       />
 
-      {/* Модалка входа */}
-      <Modal
-        visible={loginModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setLoginModalVisible(false)}
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f7" }}>
-          <LoginScreen
-            onLoginSuccess={handleLoginSuccess}
-            onContinueAsGuest={() => setLoginModalVisible(false)}
-          />
-        </SafeAreaView>
-      </Modal>
+      {/* Модалка входа бизнеса и модерации */}
+      <BusinessAuthModal
+        visible={businessAuthVisible}
+        onClose={() => setBusinessAuthVisible(false)}
+        onLoginSuccess={handleBusinessLoginSuccess}
+      />
     </SafeAreaView>
   );
 }
@@ -281,45 +253,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
-  topModeBar: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    alignItems: "center",
-  },
-  modeToggle: {
-    flexDirection: "row",
-    backgroundColor: "#f5f5f7",
-    borderRadius: 14,
-    padding: 3,
-    width: "100%",
-    maxWidth: 320,
-  },
-  modeToggleBtn: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 11,
-    alignItems: "center",
-  },
-  modeToggleBtnActive: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  modeToggleText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#8e8e93",
-  },
-  modeToggleTextActive: {
-    color: "#111111",
-    fontWeight: "700",
   },
   container: {
     flex: 1,
