@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Linking,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Phone, Send, X, Clock, User, Scissors, DollarSign } from "lucide-react-native";
 import { Appointment } from "../types";
@@ -64,16 +65,21 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
               <Text style={styles.clientPhone}>{formatPhoneUZ(appointment.clientPhone)}</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={18} color="#666666" />
+              <X size={16} color="#666666" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scroll}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
             {/* Карточка услуги */}
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <View style={styles.infoLabelGroup}>
-                  <Clock size={14} color="#8e8e93" />
+                  <Clock size={13} color="#8e8e93" />
                   <Text style={styles.infoLabel}>Время:</Text>
                 </View>
                 <Text style={styles.infoValue}>
@@ -83,7 +89,7 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
 
               <View style={styles.infoRow}>
                 <View style={styles.infoLabelGroup}>
-                  <Scissors size={14} color="#8e8e93" />
+                  <Scissors size={13} color="#8e8e93" />
                   <Text style={styles.infoLabel}>Услуга:</Text>
                 </View>
                 <Text style={styles.infoValue}>{appointment.service.nameRu}</Text>
@@ -91,7 +97,7 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
 
               <View style={styles.infoRow}>
                 <View style={styles.infoLabelGroup}>
-                  <User size={14} color="#8e8e93" />
+                  <User size={13} color="#8e8e93" />
                   <Text style={styles.infoLabel}>Мастер:</Text>
                 </View>
                 <Text style={styles.infoValue}>{appointment.staff.fullName}</Text>
@@ -99,7 +105,7 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
 
               <View style={styles.infoRow}>
                 <View style={styles.infoLabelGroup}>
-                  <DollarSign size={14} color="#8e8e93" />
+                  <DollarSign size={13} color="#8e8e93" />
                   <Text style={styles.infoLabel}>Стоимость:</Text>
                 </View>
                 <Text style={[styles.infoValue, { fontWeight: "700" }]}>
@@ -107,7 +113,7 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
                 </Text>
               </View>
 
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+              <View style={[styles.infoRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
                 <Text style={styles.infoLabel}>Текущий статус:</Text>
                 <StatusBadge status={appointment.status} />
               </View>
@@ -120,36 +126,60 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
               </View>
             )}
 
-            {/* Смена статуса */}
+            {/* Смена статуса (компактная сетка) */}
             <View style={styles.statusSection}>
               <Text style={styles.sectionTitle}>Изменить статус записи</Text>
               <View style={styles.statusGrid}>
                 <TouchableOpacity
                   onPress={() => onUpdateStatus(appointment.id, "CONFIRMED")}
-                  style={[styles.statusBtn, appointment.status === "CONFIRMED" && styles.statusBtnActive]}
+                  style={[
+                    styles.statusBtn,
+                    appointment.status === "CONFIRMED" && styles.statusBtnActive,
+                  ]}
                 >
-                  <Text style={styles.statusBtnText}>Подтвердить</Text>
+                  <Text
+                    style={[
+                      styles.statusBtnText,
+                      appointment.status === "CONFIRMED" && styles.statusBtnTextActive,
+                    ]}
+                  >
+                    Подтвердить
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => onUpdateStatus(appointment.id, "IN_PROGRESS")}
-                  style={[styles.statusBtn, appointment.status === "IN_PROGRESS" && styles.statusBtnActive]}
+                  style={[
+                    styles.statusBtn,
+                    appointment.status === "IN_PROGRESS" && styles.statusBtnActive,
+                  ]}
                 >
-                  <Text style={styles.statusBtnText}>В кресле</Text>
+                  <Text
+                    style={[
+                      styles.statusBtnText,
+                      appointment.status === "IN_PROGRESS" && styles.statusBtnTextActive,
+                    ]}
+                  >
+                    В кресле
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => onUpdateStatus(appointment.id, "COMPLETED")}
                   style={[styles.statusBtn, styles.statusBtnSuccess]}
                 >
-                  <Text style={[styles.statusBtnText, { color: "#065f46" }]}>Завершить</Text>
+                  <Text style={[styles.statusBtnText, { color: "#065f46" }]}>
+                    Завершить
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => onUpdateStatus(appointment.id, "CANCELLED")}
                   style={[styles.statusBtn, styles.statusBtnDanger]}
                 >
-                  <Text style={[styles.statusBtnText, { color: "#9f1239" }]}>Отменить</Text>
+                  <Text style={[styles.statusBtnText, { color: "#9f1239" }]}>
+                    Отменить
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -158,12 +188,12 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
           {/* Быстрые действия: Позвонить и Telegram */}
           <View style={styles.actions}>
             <TouchableOpacity onPress={handleCall} style={styles.callBtn}>
-              <Phone size={16} color="#ffffff" />
+              <Phone size={15} color="#ffffff" />
               <Text style={styles.callBtnText}>Позвонить</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleTelegram} style={styles.tgBtn}>
-              <Send size={16} color="#ffffff" />
+              <Send size={15} color="#ffffff" />
               <Text style={styles.tgBtnText}>Telegram</Text>
             </TouchableOpacity>
           </View>
@@ -176,54 +206,60 @@ export const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = (
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   content: {
     backgroundColor: "#ffffff",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
-    maxHeight: "85%",
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+    maxHeight: "92%",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "700",
     color: "#8e8e93",
     letterSpacing: 0.8,
     marginBottom: 2,
   },
   clientName: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
     color: "#111111",
   },
   clientPhone: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#666666",
-    marginTop: 2,
+    marginTop: 1,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "#f5f5f7",
     alignItems: "center",
     justifyContent: "center",
   },
   scroll: {
-    marginVertical: 4,
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingBottom: 8,
   },
   infoCard: {
     backgroundColor: "#f9f9fb",
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
   },
@@ -231,7 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 9,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.04)",
   },
@@ -241,54 +277,54 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#666666",
   },
   infoValue: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#111111",
     fontWeight: "500",
   },
   commentBox: {
-    marginTop: 12,
-    padding: 12,
+    marginTop: 8,
+    padding: 10,
     backgroundColor: "#f5f5f7",
-    borderRadius: 14,
+    borderRadius: 12,
   },
   commentLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     color: "#8e8e93",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   commentText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#333333",
   },
   statusSection: {
-    marginTop: 16,
+    marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
     color: "#111111",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statusGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
   statusBtn: {
     flex: 1,
-    minWidth: "45%",
-    paddingVertical: 10,
-    borderRadius: 12,
+    minWidth: "47%",
+    paddingVertical: 8,
+    borderRadius: 10,
     backgroundColor: "#f5f5f7",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: "rgba(0,0,0,0.05)",
   },
   statusBtnActive: {
     backgroundColor: "#111111",
@@ -303,43 +339,46 @@ const styles = StyleSheet.create({
     borderColor: "#fecdd3",
   },
   statusBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#111111",
+  },
+  statusBtnTextActive: {
+    color: "#ffffff",
   },
   actions: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 16,
+    marginTop: 10,
   },
   callBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: "#111111",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
   },
   callBtnText: {
     color: "#ffffff",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
   },
   tgBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: "#229ED9",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
   },
   tgBtnText: {
     color: "#ffffff",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
   },
 });

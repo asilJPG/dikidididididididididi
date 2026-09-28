@@ -8,6 +8,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { X, Check } from "lucide-react-native";
 import { Salon } from "../types";
@@ -223,7 +224,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
     maxHeight: "90%",
   },
   header: {
