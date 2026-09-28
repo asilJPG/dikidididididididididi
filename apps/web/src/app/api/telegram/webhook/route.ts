@@ -16,25 +16,42 @@ export async function POST(request: Request) {
     const telegramUsername = from.username || null;
     const fullName = `${from.first_name || ""} ${from.last_name || ""}`.trim() || "Клиент";
 
-    // 1. Если пользователь нажал /start
+    // 1. Если пользователь нажал /start (поддерживаем deep-link: /start <slug>)
     if (text && text.startsWith("/start")) {
+      const parts = text.split(" ");
+      const requestedSlug = parts.length > 1 ? parts[1].trim() : null;
+
+      // Ищем салон по slug или берем первый салон в системе
+      let salon = null;
+      if (requestedSlug) {
+        salon = await prisma.salon.findUnique({
+          where: { slug: requestedSlug },
+        });
+      }
+      if (!salon) {
+        salon = await prisma.salon.findFirst();
+      }
+
+      const slug = salon ? salon.slug : "bro-barbershop";
+      const salonName = salon ? salon.name : "DIKIDI UZ";
+
       // Базовый URL приложения
       const host = request.headers.get("host") || "localhost:3000";
       const proto = request.headers.get("x-forwarded-proto") || "http";
-      const appUrl = `${proto}://${host}/b/bro-barbershop`;
+      const appUrl = `${proto}://${host}/b/${slug}`;
 
       // Приветствие только с кнопкой открытия Mini App — никакого лишнего текста и баннеров!
       await sendTelegramMessage(
         chatId,
         `👋 Здравствуйте, <b>${from.first_name}</b>!\n\n` +
-          `Онлайн-запись в <b>Bro Barbershop Tashkent</b>:\n` +
-          `Выберите услугу, мастера и свободное время в один клик.`,
+          `Онлайн-запись в <b>${salonName}</b>:\n` +
+          `Выберите услугу, мастера и удобное время в один клик.`,
         {
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: "💈 Открыть онлайн-запись",
+                  text: "📅 Открыть онлайн-запись",
                   web_app: { url: appUrl },
                 },
               ],

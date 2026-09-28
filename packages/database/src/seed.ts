@@ -266,9 +266,174 @@ async function main() {
     },
   });
 
+  // 8. Создаем салон ногтевого сервиса "Gloss Nails & Brow Bar"
+  const ownerGloss = await prisma.user.create({
+    data: {
+      phone: "+998901112233",
+      fullName: "Камилла Юсупова",
+      role: UserRole.OWNER,
+      avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+    },
+  });
+
+  const salonGloss = await prisma.salon.create({
+    data: {
+      ownerId: ownerGloss.id,
+      name: "Gloss Nails & Brow Bar",
+      slug: "gloss-nails",
+      phone: "+998712334455",
+      city: "Ташкент",
+      address: "Юнусабадский район, пр-т Амира Темура, 107",
+      landmark: "Ориентир: ст. м. Шахристан",
+      description: "Студия эстетики ногтей и оформления взгляда. Стерильность по нормам СанПиН, премиальные материалы и авторский сервис.",
+      logoUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=200",
+      rating: 4.98,
+      reviewCount: 76,
+    },
+  });
+
+  const catNails = await prisma.category.create({
+    data: {
+      salonId: salonGloss.id,
+      nameRu: "Ногтевой сервис",
+      sortOrder: 1,
+    },
+  });
+
+  const srvManicure = await prisma.service.create({
+    data: {
+      salonId: salonGloss.id,
+      categoryId: catNails.id,
+      nameRu: "Аппаратный маникюр + покрытие гель-лак",
+      durationMinutes: 75,
+      price: 180000,
+    },
+  });
+
+  const srvPedicure = await prisma.service.create({
+    data: {
+      salonId: salonGloss.id,
+      categoryId: catNails.id,
+      nameRu: "Smart-педикюр эстетический",
+      durationMinutes: 60,
+      price: 220000,
+    },
+  });
+
+  const masterKamilla = await prisma.staff.create({
+    data: {
+      salonId: salonGloss.id,
+      fullName: "Камилла Юсупова",
+      specialty: "Топ-мастер ногтевого сервиса",
+      rating: 4.99,
+      reviewCount: 52,
+      commissionPercent: 50,
+    },
+  });
+
+  await prisma.staffService.createMany({
+    data: [
+      { staffId: masterKamilla.id, serviceId: srvManicure.id },
+      { staffId: masterKamilla.id, serviceId: srvPedicure.id },
+    ],
+  });
+
+  for (let day = 1; day <= 6; day++) {
+    await prisma.schedule.create({
+      data: {
+        staffId: masterKamilla.id,
+        dayOfWeek: day,
+        startTime: "10:00",
+        endTime: "20:00",
+      },
+    });
+  }
+
+  // 9. Создаем студию волос "ESTETICA Beauty Lounge"
+  const ownerEstetica = await prisma.user.create({
+    data: {
+      phone: "+998904445566",
+      fullName: "Дильноза Алиева",
+      role: UserRole.OWNER,
+      avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+    },
+  });
+
+  const salonEstetica = await prisma.salon.create({
+    data: {
+      ownerId: ownerEstetica.id,
+      name: "ESTETICA Beauty Lounge",
+      slug: "estetica-lounge",
+      phone: "+998712556677",
+      city: "Ташкент",
+      address: "Яккасарайский район, ул. Шота Руставели, 53",
+      landmark: "Ориентир: гостиница Grand Mir",
+      description: "Пространство красоты: сложное колорирование, уходы для волос Tokio Inkarami, укладки и макияж.",
+      logoUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200",
+      rating: 4.92,
+      reviewCount: 39,
+    },
+  });
+
+  const catHairEst = await prisma.category.create({
+    data: {
+      salonId: salonEstetica.id,
+      nameRu: "Колористика и уход",
+      sortOrder: 1,
+    },
+  });
+
+  const srvAirTouch = await prisma.service.create({
+    data: {
+      salonId: salonEstetica.id,
+      categoryId: catHairEst.id,
+      nameRu: "Сложное окрашивание AirTouch / Shatush",
+      durationMinutes: 180,
+      price: 850000,
+    },
+  });
+
+  const srvCare = await prisma.service.create({
+    data: {
+      salonId: salonEstetica.id,
+      categoryId: catHairEst.id,
+      nameRu: "Японский уход для волос Tokio Inkarami",
+      durationMinutes: 60,
+      price: 450000,
+    },
+  });
+
+  const masterDilnoza = await prisma.staff.create({
+    data: {
+      salonId: salonEstetica.id,
+      fullName: "Дильноза Алиева",
+      specialty: "Стилист-колорист международного уровня",
+      rating: 4.95,
+      reviewCount: 34,
+      commissionPercent: 45,
+    },
+  });
+
+  await prisma.staffService.createMany({
+    data: [
+      { staffId: masterDilnoza.id, serviceId: srvAirTouch.id },
+      { staffId: masterDilnoza.id, serviceId: srvCare.id },
+    ],
+  });
+
+  for (let day = 1; day <= 6; day++) {
+    await prisma.schedule.create({
+      data: {
+        staffId: masterDilnoza.id,
+        dayOfWeek: day,
+        startTime: "10:00",
+        endTime: "21:00",
+      },
+    });
+  }
+
   console.log("✅ Тестовые данные успешно загружены!");
-  console.log(`Салон: ${salon.name} (ссылка: /b/${salon.slug})`);
-  console.log(`Мастера: ${master1.fullName}, ${master2.fullName}`);
+  console.log(`Салоны: ${salon.name}, ${salonGloss.name}, ${salonEstetica.name}`);
 }
 
 main()

@@ -28,3 +28,41 @@ export function formatPhoneUZ(phone: string): string {
   }
   return phone;
 }
+
+/**
+ * Парсинг даты (YYYY-MM-DD) и времени (HH:MM) в объект Date по часовому поясу Ташкента (UTC+5)
+ */
+export function parseTashkentDateTime(dateStr: string, timeStr: string): Date {
+  return new Date(`${dateStr}T${timeStr}:00+05:00`);
+}
+
+/**
+ * Форматирование времени в формате HH:mm по времени Ташкента
+ */
+export function formatTashkentTime(date: Date | string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Asia/Tashkent",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
+}
+
+/**
+ * Получение минут от начала суток (0..1439) по времени Ташкента
+ */
+export function getTashkentDayMinutes(date: Date | string): number {
+  const formatted = formatTashkentTime(date);
+  const [h, m] = formatted.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Получение диапазона начала и конца суток по времени Ташкента
+ */
+export function getTashkentDayRange(dateStr: string): { startOfDay: Date; endOfDay: Date } {
+  return {
+    startOfDay: new Date(`${dateStr}T00:00:00+05:00`),
+    endOfDay: new Date(`${dateStr}T23:59:59.999+05:00`),
+  };
+}

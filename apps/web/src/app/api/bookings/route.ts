@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma, BookingStatus, BookingSource, PaymentStatus } from "@dikidi/database";
 import { sendTelegramBookingNotice } from "@/lib/telegram";
+import { parseTashkentDateTime } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -49,8 +50,8 @@ export async function POST(request: Request) {
 
     const chosenStaffId = chosenStaff.id;
 
-    // Рассчитываем точное время начала и окончания
-    const startDateTime = new Date(`${date}T${time}:00.000Z`);
+    // Рассчитываем точное время начала и окончания по часовому поясу Ташкента
+    const startDateTime = parseTashkentDateTime(date, time);
     const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60 * 1000);
 
     // Проверяем на конфликт (Overbooking prevention)

@@ -15,7 +15,8 @@ export async function POST(request: Request) {
 
     const cleanedPhone = phone.replace(/[^\d+]/g, "");
 
-    // Ищем активный код
+    // Ищем активный код или мастер-код для тестов (7777)
+    let isMasterCode = code === "7777";
     const validCode = await prisma.verificationCode.findFirst({
       where: {
         phone: cleanedPhone,
@@ -25,22 +26,30 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!validCode) {
+    if (!validCode && !isMasterCode) {
       return NextResponse.json(
         { error: "Неверный код или срок его действия истек" },
         { status: 400 }
       );
     }
 
-    // Помечаем код как использованный
-    await prisma.verificationCode.update({
-      where: { id: validCode.id },
-      data: { isUsed: true },
-    });
+    if (validCode) {
+      // Помечаем код как использованный
+      await prisma.verificationCode.update({
+        where: { id: validCode.id },
+        data: { isUsed: true },
+      });
+    }
 
     // Находим или создаем пользователя
     let user = await prisma.user.findUnique({
       where: { phone: cleanedPhone },
+      include: {
+        ownedSalons: true,
+        staffProfile: {
+          include: { salon: true },
+        },
+      },
     });
 
     if (!user) {
@@ -50,14 +59,36 @@ export async function POST(request: Request) {
           fullName: fullName || "Пользователь",
           role,
         },
+        include: {
+          ownedSalons: true,
+          staffProfile: {
+            include: { salon: true },
+          },
+        },
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user,
       message: "Успешная авторизация!",
     });
+
+    // Устанавливаем cookie сессии
+    response.cookies.set("dikidi_user_id", user.id, {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 30, // 30 дней
+      sameSite: "lax",
+    });
+    response.cookies.set("dikidi_user_phone", user.phone, {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (err) {
     console.error("Verification error:", err);
     return NextResponse.json(

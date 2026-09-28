@@ -20,7 +20,7 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
+      <body className="min-h-screen bg-[#f5f5f7] text-[#111111] antialiased selection:bg-neutral-900 selection:text-white">
         {children}
       </body>
     </html>

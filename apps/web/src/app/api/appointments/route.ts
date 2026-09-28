@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma, BookingStatus, BookingSource, PaymentMethod, PaymentStatus } from "@dikidi/database";
+import { getTashkentDayRange, parseTashkentDateTime } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
@@ -19,8 +22,7 @@ export async function GET(request: Request) {
     }
 
     if (dateStr) {
-      const startOfDay = new Date(dateStr + "T00:00:00.000Z");
-      const endOfDay = new Date(dateStr + "T23:59:59.999Z");
+      const { startOfDay, endOfDay } = getTashkentDayRange(dateStr);
       whereClause.startDateTime = {
         gte: startOfDay,
         lte: endOfDay,
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
     }
 
-    const startDateTime = new Date(`${date}T${time}:00.000Z`);
+    const startDateTime = parseTashkentDateTime(date, time);
     const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60 * 1000);
 
     // Добавляем или обновляем клиента

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@dikidi/database";
+import { getTashkentDayRange, getTashkentDayMinutes } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
@@ -60,9 +63,8 @@ export async function GET(
       return NextResponse.json({ slots: [] });
     }
 
-    // Начало и конец суток
-    const startOfDay = new Date(dateStr + "T00:00:00.000Z");
-    const endOfDay = new Date(dateStr + "T23:59:59.999Z");
+    // Начало и конец суток по Ташкенту
+    const { startOfDay, endOfDay } = getTashkentDayRange(dateStr);
 
     // Получаем существующие записи
     const existingAppointments = await prisma.appointment.findMany({
@@ -96,14 +98,12 @@ export async function GET(
         return { start: bh1 * 60 + bm1, end: bh2 * 60 + bm2 };
       });
 
-      // Записи мастера
+      // Записи мастера по времени Ташкента
       const masterAppts = existingAppointments.filter((a) => a.staffId === master.id);
       const apptIntervals = masterAppts.map((a) => {
-        const s = new Date(a.startDateTime);
-        const e = new Date(a.endDateTime);
         return {
-          start: s.getHours() * 60 + s.getMinutes(),
-          end: e.getHours() * 60 + e.getMinutes(),
+          start: getTashkentDayMinutes(a.startDateTime),
+          end: getTashkentDayMinutes(a.endDateTime),
         };
       });
 
