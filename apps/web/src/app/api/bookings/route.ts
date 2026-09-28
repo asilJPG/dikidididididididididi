@@ -1,0 +1,151 @@
+import { NextResponse } from "next/server";
+import { prisma, BookingStatus, BookingSource, PaymentStatus } from "@dikidi/database";
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const {
+      salonSlug,
+      serviceId,
+      staffId,
+      date, // YYYY-MM-DD
+      time, // HH:MM
+      clientName,
+      clientPhone,
+      clientComment,
+      source = BookingSource.ONLINE_WIDGET,
+    } = body;
+
+    if (!salonSlug || !serviceId || !staffId || !date || !time || !clientName || !clientPhone) {
+      return NextResponse.json(
+        { error: "Пожалуйста, заполните все обязательные поля" },
+        { status: 400 }
+      );
+    }
+
+    const salon = await prisma.salon.findUnique({
+      where: { slug: salonSlug },
+      include: { services: true, staff: true },
+    });
+
+    if (!salon) {
+      return NextResponse.json({ error: "Салон не найден" }, { status: 404 });
+    }
+
+    const service = salon.services.find((s) => s.id === serviceId);
+    if (!service) {
+      return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
+    }
+
+    // Если staffId === 'any', берем первого подходящего мастера
+    let chosenStaffId = staffId;
+    if (chosenStaffId === "any") {
+      const eligible = salon.staff.find((st) => st.isActive);
+      if (!eligible) {
+        return NextResponse.json({ error: "Нет доступных мастеров" }, { status: 400 });
+      }
+      chosenStaffId = eligible.id;
+    }
+
+    // Рассчитываем точное время начала и окончания
+    const [h, m] = time.split(":").map(Number);
+    const startDateTime = new Date(`${date}T${time}:00.000Z`);
+    // adjust for local time if necessary or UTC
+    const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60 * 1000);
+
+    // Проверяем на конфликт (Overbooking prevention)
+    const conflict = await prisma.appointment.findFirst({
+      where: {
+        staffId: chosenStaffId,
+        status: { notIn: ["CANCELLED"] },
+        OR: [
+          {
+            startDateTime: { lte: startDateTime },
+            endDateTime: { gt: startDateTime },
+          },
+          {
+            startDateTime: { lt: endDateTime },
+            endDateTime: { gte: endDateTime },
+          },
+          {
+            startDateTime: { gte: startDateTime },
+            endDateTime: { lte: endDateTime },
+          },
+        ],
+      },
+    });
+
+    if (conflict) {
+      return NextResponse.json(
+        { error: "К сожалению, этот интервал времени уже занят. Пожалуйста, выберите другое время." },
+        { status: 409 }
+      );
+    }
+
+    // Находим или создаем клиента в CRM салона
+    let customer = await prisma.customer.findUnique({
+      where: {
+        salonId_phone: {
+          salonId: salon.id,
+          phone: clientPhone,
+        },
+      },
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          salonId: salon.id,
+          phone: clientPhone,
+          fullName: clientName,
+          totalVisits: 1,
+          totalSpent: service.price,
+        },
+      });
+    } else {
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: {
+          totalVisits: customer.totalVisits + 1,
+          totalSpent: customer.totalSpent + service.price,
+        },
+      });
+    }
+
+    // Создаем запись
+    const appointment = await prisma.appointment.create({
+      data: {
+        salonId: salon.id,
+        staffId: chosenStaffId,
+        serviceId: service.id,
+        customerId: customer.id,
+        startDateTime,
+        endDateTime,
+        status: BookingStatus.PENDING,
+        source,
+        price: service.price,
+        paymentStatus: PaymentStatus.UNPAID,
+        clientName,
+        clientPhone,
+        clientComment,
+      },
+      include: {
+        staff: true,
+        service: true,
+        salon: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      appointment,
+      message: "Запись успешно оформлена!",
+    });
+  } catch (error) {
+    console.error("Booking error:", error);
+    return NextResponse.json(
+      { error: "Произошла ошибка при бронировании" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,256 @@
+// Prisma Schema for Dikidi UZ (Beauty & Services Booking Platform)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Пользователь системы (для входа в CRM или личный кабинет клиента)
+model User {
+  id           String      @id @default(uuid())
+  phone        String      @unique // Номер телефона в формате +998XXXXXXXXX
+  fullName     String
+  email        String?
+  role         String      @default("MASTER") // OWNER, ADMIN, MASTER, CLIENT
+  avatarUrl    String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Связи
+  ownedSalons  Salon[]     @relation("SalonOwner")
+  staffProfile Staff?
+  appointments Appointment[] @relation("ClientAppointments")
+  reviews      Review[]
+
+  @@map("users")
+}
+
+// 2. Салон красоты / Барбершоп / Кабинет частного мастера
+model Salon {
+  id           String      @id @default(uuid())
+  ownerId      String
+  name         String      // Название (например: "Barbershop Chop-Chop Tashkent")
+  slug         String      @unique // Ссылка для онлайн-записи: /b/chop-chop
+  phone        String      // Контактный телефон +998...
+  city         String      @default("Ташкент")
+  address      String      // Адрес (например: "ул. Амира Темура, 45")
+  landmark     String?     // Ориентир (например: "рядом с метро Ойбек")
+  latitude     Float?
+  longitude    Float?
+  description  String?
+  logoUrl      String?
+  coverUrl     String?
+  instagramUrl String?
+  telegramUrl  String?
+  rating       Float       @default(5.0)
+  reviewCount  Int         @default(0)
+  isVerified   Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Связи
+  owner        User        @relation("SalonOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff        Staff[]
+  categories   Category[]
+  services     Service[]
+  customers    Customer[]
+  appointments Appointment[]
+  reviews      Review[]
+
+  @@map("salons")
+}
+
+// 3. Категория услуг (например: "Стрижки", "Окрашивание", "Маникюр")
+model Category {
+  id          String    @id @default(uuid())
+  salonId     String
+  nameRu      String    // На русском (например: "Ногтевой сервис")
+  nameUz      String?   // На узбекском (например: "Tirnoq xizmatlari")
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  salon       Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  services    Service[]
+
+  @@map("categories")
+}
+
+// 4. Конкретная услуга
+model Service {
+  id              String         @id @default(uuid())
+  salonId         String
+  categoryId      String?
+  nameRu          String         // Например: "Мужская модельная стрижка"
+  nameUz          String?        // "Erkaklar soch turmagi"
+  description     String?
+  durationMinutes Int            @default(45) // Длительность в минутах
+  price           Int            // Цена в сумах (например: 120000)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  salon           Salon          @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  category        Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  staffServices   StaffService[]
+  appointments    Appointment[]
+
+  @@map("services")
+}
+
+// 5. Сотрудник / Мастер
+model Staff {
+  id                String         @id @default(uuid())
+  salonId           String
+  userId            String?        @unique // Привязка к аккаунту User (если есть)
+  fullName          String         // Имя мастера (например: "Азиз Рустамов")
+  specialty         String         // Должность (например: "Топ-барбер")
+  phone             String?        // Контактный телефон
+  avatarUrl         String?
+  bio               String?
+  commissionPercent Int            @default(40) // Процент мастера для зарплаты (40%)
+  isActive          Boolean        @default(true)
+  rating            Float          @default(5.0)
+  reviewCount       Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  salon             Salon          @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  staffServices     StaffService[]
+  schedules         Schedule[]
+  appointments      Appointment[]
+  reviews           Review[]
+
+  @@map("staff")
+}
+
+// Связь многие-ко-многим: какие мастера выполняют какие услуги
+model StaffService {
+  staffId   String
+  serviceId String
+
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+  @@map("staff_services")
+}
+
+// 6. График работы мастера по дням недели
+model Schedule {
+  id          String   @id @default(uuid())
+  staffId     String
+  dayOfWeek   Int      // 0 - Воскресенье, 1 - Понедельник, ..., 6 - Суббота
+  startTime   String   @default("09:00") // Формат "ЧЧ:ММ"
+  endTime     String   @default("19:00") // Формат "ЧЧ:ММ"
+  isDayOff    Boolean  @default(false)   // Выходной ли день
+
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  breaks      Break[]
+
+  @@unique([staffId, dayOfWeek])
+  @@map("schedules")
+}
+
+// Перерывы мастера (обед, перерыв)
+model Break {
+  id         String   @id @default(uuid())
+  scheduleId String
+  startTime  String   @default("13:00")
+  endTime    String   @default("14:00")
+  title      String   @default("Обед")
+
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@map("breaks")
+}
+
+// 7. База клиентов салона (CRM)
+model Customer {
+  id              String        @id @default(uuid())
+  salonId         String
+  phone           String        // +998...
+  fullName        String
+  notes           String?       // Заметки: "Аллергия на краситель, любит зеленый чай"
+  totalVisits     Int           @default(0)
+  totalSpent      Int           @default(0) // Сумма в UZS
+  discountPercent Int           @default(0) // Персональная скидка
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  salon           Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  appointments    Appointment[]
+
+  @@unique([salonId, phone])
+  @@map("customers")
+}
+
+// 8. Запись (Бронирование) — Сердце системы!
+model Appointment {
+  id            String        @id @default(uuid())
+  salonId       String
+  staffId       String
+  serviceId     String
+  customerId    String?
+  clientUserId  String?       // Если клиент зарегистрирован в приложении
+
+  // Дата и время
+  startDateTime DateTime      // Точное время начала записи
+  endDateTime   DateTime      // Точное время завершения записи
+
+  // Статусы: PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  status        String        @default("PENDING")
+  // Источник: ONLINE_WIDGET, TELEGRAM_BOT, MANUAL_ADMIN, PHONE_CALL
+  source        String        @default("ONLINE_WIDGET")
+
+  // Финансы
+  price         Int           // Итоговая цена в UZS
+  paidAmount    Int           @default(0)
+  // Статус оплаты: UNPAID, DEPOSIT, PAID, REFUNDED
+  paymentStatus String        @default("UNPAID")
+  // Способ оплаты: CASH, CLICK, PAYME, UZUM, CARD_TERMINAL
+  paymentMethod String        @default("CASH")
+
+  // Данные клиента на момент записи
+  clientName    String
+  clientPhone   String
+  clientComment String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  salon         Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  staff         Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  clientUser    User?         @relation("ClientAppointments", fields: [clientUserId], references: [id], onDelete: SetNull)
+  review        Review?
+
+  @@index([salonId, startDateTime])
+  @@index([staffId, startDateTime])
+  @@map("appointments")
+}
+
+// 9. Отзывы клиентов
+model Review {
+  id            String       @id @default(uuid())
+  salonId       String
+  staffId       String?
+  appointmentId String       @unique
+  userId        String?
+  clientName    String
+  rating        Int          // 1 - 5 звезд
+  comment       String?
+  createdAt     DateTime     @default(now())
+
+  salon         Salon        @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  staff         Staff?       @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  appointment   Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("reviews")
+}

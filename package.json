@@ -1,0 +1,27 @@
+{
+  "name": "dikidi-uz",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Beauty & Service Booking CRM for Uzbekistan (DIKIDI analog)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace=apps/web run dev",
+    "dev:mobile": "npm --workspace=apps/mobile run start",
+    "build:web": "npm --workspace=apps/web run build",
+    "db:push": "npm --workspace=packages/database run db:push",
+    "db:studio": "npm --workspace=packages/database run db:studio",
+    "db:seed": "npm --workspace=packages/database run db:seed"
+  },
+  "keywords": [
+    "crm",
+    "booking",
+    "uzbekistan",
+    "twa",
+    "dikidi"
+  ],
+  "author": "",
+  "license": "ISC"
+}
