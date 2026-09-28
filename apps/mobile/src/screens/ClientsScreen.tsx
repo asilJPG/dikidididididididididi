@@ -24,7 +24,12 @@ export const ClientsScreen: React.FC<ClientsScreenProps> = ({ salon }) => {
   const [loading, setLoading] = useState(true);
 
   const loadCustomers = async () => {
-    if (!salon) return;
+    if (!salon) {
+      setLoading(false);
+      setCustomers([]);
+      return;
+    }
+    setLoading(true);
     try {
       const data = await api.getCustomers(salon.id, search);
       setCustomers(data);

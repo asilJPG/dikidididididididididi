@@ -289,7 +289,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.6,
   },
   input: {
     backgroundColor: "#ffffff",

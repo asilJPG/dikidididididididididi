@@ -33,7 +33,11 @@ export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon, currentUser
   })();
 
   const loadData = async () => {
-    if (!salon) return;
+    if (!salon) {
+      setRefreshing(false);
+      setAppointments([]);
+      return;
+    }
     try {
       const staffParam = isMaster && masterStaffId ? masterStaffId : "all";
       const data = await api.getAppointments(salon.id, todayStr, staffParam);
@@ -199,14 +203,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "rgba(255,255,255,0.6)",
-    letterSpacing: 0.8,
   },
   mainAmount: {
     fontSize: 28,
     fontWeight: "900",
     color: "#ffffff",
     marginTop: 6,
-    letterSpacing: -0.5,
   },
   mainSub: {
     fontSize: 11,

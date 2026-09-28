@@ -526,7 +526,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.5,
     marginBottom: 4,
   },
   serviceCard: {
@@ -734,7 +733,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.5,
   },
   fieldInput: {
     backgroundColor: "#ffffff",

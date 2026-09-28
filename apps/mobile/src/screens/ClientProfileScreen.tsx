@@ -219,7 +219,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 6,
-    letterSpacing: 0.6,
   },
   menuItem: {
     flexDirection: "row",

@@ -522,7 +522,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: "#ffffff",
@@ -621,7 +620,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#8e8e93",
     textAlign: "center",
-    letterSpacing: 0.6,
     marginBottom: 8,
   },
   demoBtn: {

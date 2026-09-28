@@ -383,7 +383,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#111111",
-    letterSpacing: -0.2,
   },
   ratingRow: {
     flexDirection: "row",

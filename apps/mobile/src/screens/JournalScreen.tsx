@@ -67,7 +67,13 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon, currentUser
   }, []);
 
   const loadAppointments = async () => {
-    if (!salon) return;
+    if (!salon) {
+      setLoading(false);
+      setRefreshing(false);
+      setAppointments([]);
+      return;
+    }
+    setLoading(true);
     try {
       const targetStaff = isMaster && masterStaffId ? masterStaffId : filterStaff;
       const data = await api.getAppointments(salon.id, selectedDate, targetStaff);
@@ -110,6 +116,26 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon, currentUser
 
   const masterPercent = currentUser?.staffProfile?.commissionPercent || 40;
   const masterEarnings = Math.round(totalRevenue * (masterPercent / 100));
+
+  if (!salon) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.salonName}>Мой салон</Text>
+            <Text style={styles.dateLabel}>Журнал расписания</Text>
+          </View>
+        </View>
+        <View style={styles.emptyBox}>
+          <CalendarIcon size={44} color="#8e8e93" />
+          <Text style={styles.emptyTitle}>Салон еще не создан</Text>
+          <Text style={styles.emptySubtitle}>
+            Перейдите во вкладку «Салон» в нижнем меню, чтобы создать профиль вашего салона и начать работу
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -336,7 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#111111",
-    letterSpacing: -0.2,
   },
   dateLabel: {
     fontSize: 11,

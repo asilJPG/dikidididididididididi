@@ -81,6 +81,5 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
-    letterSpacing: -0.2,
   },
 });

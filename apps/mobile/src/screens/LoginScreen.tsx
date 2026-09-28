@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     color: "#111111",
-    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 12,
@@ -347,7 +346,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.6,
   },
   input: {
     height: 50,
@@ -362,8 +360,8 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     textAlign: "center",
-    letterSpacing: 10,
     fontSize: 20,
+    fontWeight: "700",
   },
   devCodeBadge: {
     backgroundColor: "#f5f5f7",

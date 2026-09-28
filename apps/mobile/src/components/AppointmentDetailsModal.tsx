@@ -228,7 +228,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "700",
     color: "#8e8e93",
-    letterSpacing: 0.8,
     marginBottom: 2,
   },
   clientName: {
