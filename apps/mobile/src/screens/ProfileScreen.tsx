@@ -25,6 +25,7 @@ import { Salon, User, Service, Staff } from "../types";
 import { API_BASE_URL, formatUZS } from "../config";
 import { ManageServiceModal } from "../components/ManageServiceModal";
 import { ManageStaffModal } from "../components/ManageStaffModal";
+import { CreateSalonModal } from "../components/CreateSalonModal";
 
 interface ProfileScreenProps {
   salon: Salon | null;
@@ -39,13 +40,55 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onLogout,
   onReloadSalon,
 }) => {
+  const [createSalonVisible, setCreateSalonVisible] = useState(false);
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
 
   const [staffModalVisible, setStaffModalVisible] = useState(false);
   const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
 
-  if (!salon) return null;
+  if (!salon) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.noSalonContainer}>
+          <View style={styles.noSalonIconBadge}>
+            <Store size={36} color="#111111" />
+          </View>
+          <Text style={styles.noSalonTitle}>Салон еще не создан</Text>
+          <Text style={styles.noSalonSub}>
+            Создайте профиль вашего салона или барбершопа, чтобы добавлять услуги, подключать мастеров и вести журнал записей.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.createSalonBtn}
+            onPress={() => setCreateSalonVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Plus size={18} color="#ffffff" strokeWidth={2.5} />
+            <Text style={styles.createSalonBtnText}>Создать салон</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.logoutBtnEmpty}
+            onPress={onLogout}
+            activeOpacity={0.7}
+          >
+            <LogOut size={16} color="#e11d48" />
+            <Text style={styles.logoutBtnEmptyText}>Выйти из аккаунта</Text>
+          </TouchableOpacity>
+        </View>
+
+        <CreateSalonModal
+          visible={createSalonVisible}
+          currentUser={currentUser}
+          onClose={() => setCreateSalonVisible(false)}
+          onSalonCreated={() => {
+            onReloadSalon?.();
+          }}
+        />
+      </View>
+    );
+  }
 
   const isOwner =
     currentUser?.role === "OWNER" ||
@@ -496,6 +539,69 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoutBtnText: {
+    color: "#e11d48",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  noSalonContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  noSalonIconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  noSalonTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111111",
+    textAlign: "center",
+  },
+  noSalonSub: {
+    fontSize: 13,
+    color: "#8e8e93",
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  createSalonBtn: {
+    backgroundColor: "#111111",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    height: 50,
+    borderRadius: 16,
+    gap: 8,
+    width: "100%",
+  },
+  createSalonBtnText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  logoutBtnEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 8,
+  },
+  logoutBtnEmptyText: {
     color: "#e11d48",
     fontSize: 13,
     fontWeight: "600",

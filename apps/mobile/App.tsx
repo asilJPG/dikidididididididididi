@@ -183,49 +183,51 @@ export default function App() {
       <ExpoStatusBar style="dark" />
 
       <View style={styles.container}>
-        {/* РЕЖИМ БИЗНЕСА (ТОЛЬКО ДЛЯ ВЕРИФИЦИРОВАННЫХ САЛОНОВ И МАСТЕРОВ) */}
-        {mode === "business" && (
-          <>
-            {activeBusinessTab === "journal" && (
-              <JournalScreen salon={currentSalon} currentUser={currentUser} />
-            )}
-            {activeBusinessTab === "clients" && <ClientsScreen salon={currentSalon} />}
-            {activeBusinessTab === "finance" && (
-              <FinanceScreen salon={currentSalon} currentUser={currentUser} />
-            )}
-            {activeBusinessTab === "salon" && (
-              <ProfileScreen
-                salon={currentSalon}
-                currentUser={currentUser}
-                onLogout={handleLogout}
-                onReloadSalon={() => loadSalonData(currentUser || undefined)}
-              />
-            )}
-          </>
-        )}
+        <View style={styles.screenWrapper}>
+          {/* РЕЖИМ БИЗНЕСА (ТОЛЬКО ДЛЯ ВЕРИФИЦИРОВАННЫХ САЛОНОВ И МАСТЕРОВ) */}
+          {mode === "business" && (
+            <>
+              {activeBusinessTab === "journal" && (
+                <JournalScreen salon={currentSalon} currentUser={currentUser} />
+              )}
+              {activeBusinessTab === "clients" && <ClientsScreen salon={currentSalon} />}
+              {activeBusinessTab === "finance" && (
+                <FinanceScreen salon={currentSalon} currentUser={currentUser} />
+              )}
+              {activeBusinessTab === "salon" && (
+                <ProfileScreen
+                  salon={currentSalon}
+                  currentUser={currentUser}
+                  onLogout={handleLogout}
+                  onReloadSalon={() => loadSalonData(currentUser || undefined)}
+                />
+              )}
+            </>
+          )}
 
-        {/* РЕЖИМ КЛИЕНТА (ОСНОВНОЙ ДЛЯ 99% ПОЛЬЗОВАТЕЛЕЙ) */}
-        {mode === "client" && (
-          <>
-            {activeClientTab === "catalog" && (
-              <ClientCatalogScreen onSelectSalonForBooking={handleOpenBooking} />
-            )}
-            {activeClientTab === "my-bookings" && (
-              <ClientAppointmentsScreen
-                currentUser={currentUser}
-                onGoToCatalog={() => setActiveClientTab("catalog")}
-                onRequireLogin={() => {}}
-              />
-            )}
-            {activeClientTab === "client-profile" && (
-              <ClientProfileScreen
-                currentUser={currentUser}
-                onLogout={handleLogout}
-                onRequireLogin={() => {}}
-              />
-            )}
-          </>
-        )}
+          {/* РЕЖИМ КЛИЕНТА (ОСНОВНОЙ ДЛЯ 99% ПОЛЬЗОВАТЕЛЕЙ) */}
+          {mode === "client" && (
+            <>
+              {activeClientTab === "catalog" && (
+                <ClientCatalogScreen onSelectSalonForBooking={handleOpenBooking} />
+              )}
+              {activeClientTab === "my-bookings" && (
+                <ClientAppointmentsScreen
+                  currentUser={currentUser}
+                  onGoToCatalog={() => setActiveClientTab("catalog")}
+                  onRequireLogin={() => {}}
+                />
+              )}
+              {activeClientTab === "client-profile" && (
+                <ClientProfileScreen
+                  currentUser={currentUser}
+                  onLogout={handleLogout}
+                  onRequireLogin={() => {}}
+                />
+              )}
+            </>
+          )}
+        </View>
 
         {/* Нижний таббар */}
         <TabBar mode={mode} currentTab={currentTab} onSelectTab={handleSelectTab} />
@@ -260,6 +262,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f7",
+    justifyContent: "space-between",
+  },
+  screenWrapper: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,

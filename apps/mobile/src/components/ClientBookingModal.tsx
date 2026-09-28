@@ -229,25 +229,33 @@ export const ClientBookingModal: React.FC<ClientBookingModalProps> = ({
         {step === 1 && (
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
             <Text style={styles.sectionLabel}>ДОСТУПНЫЕ УСЛУГИ</Text>
-            {salon.services?.map((srv) => (
-              <TouchableOpacity
-                key={srv.id}
-                style={[
-                  styles.serviceCard,
-                  selectedService?.id === srv.id && styles.serviceCardSelected,
-                ]}
-                onPress={() => handleSelectService(srv)}
-              >
-                <View style={styles.srvLeft}>
-                  <Text style={styles.srvName}>{srv.nameRu}</Text>
-                  <Text style={styles.srvDuration}>{srv.durationMinutes} мин</Text>
-                </View>
-                <View style={styles.srvRight}>
-                  <Text style={styles.srvPrice}>{srv.price.toLocaleString("ru-RU")} сум</Text>
-                  <ArrowRight size={16} color="#8e8e93" />
-                </View>
-              </TouchableOpacity>
-            ))}
+            {(!salon.services || salon.services.length === 0) ? (
+              <View style={styles.noSlotsBox}>
+                <Sparkles size={28} color="#8e8e93" />
+                <Text style={styles.noSlotsTitle}>Услуги еще не добавлены</Text>
+                <Text style={styles.noSlotsSub}>В этом салоне пока нет доступных для записи услуг</Text>
+              </View>
+            ) : (
+              salon.services?.map((srv) => (
+                <TouchableOpacity
+                  key={srv.id}
+                  style={[
+                    styles.serviceCard,
+                    selectedService?.id === srv.id && styles.serviceCardSelected,
+                  ]}
+                  onPress={() => handleSelectService(srv)}
+                >
+                  <View style={styles.srvLeft}>
+                    <Text style={styles.srvName}>{srv.nameRu}</Text>
+                    <Text style={styles.srvDuration}>{srv.durationMinutes} мин</Text>
+                  </View>
+                  <View style={styles.srvRight}>
+                    <Text style={styles.srvPrice}>{srv.price.toLocaleString("ru-RU")} сум</Text>
+                    <ArrowRight size={16} color="#8e8e93" />
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         )}
 

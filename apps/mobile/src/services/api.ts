@@ -16,6 +16,24 @@ export const api = {
     return data.salon || null;
   },
 
+  // Создание нового салона
+  createSalon: async (payload: {
+    name: string;
+    phone: string;
+    city?: string;
+    address: string;
+    description?: string;
+    ownerId?: string;
+    ownerPhone?: string;
+  }): Promise<{ salon?: Salon; error?: string }> => {
+    const res = await fetch(`${API_BASE_URL}/api/salons`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
   // Получение записей на выбранную дату
   getAppointments: async (
     salonId: string,
