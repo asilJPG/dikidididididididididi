@@ -1,226 +1,200 @@
 import Link from "next/link";
 import {
-  Calendar,
-  Sparkles,
-  Smartphone,
-  ShieldCheck,
-  Users,
-  Send,
-  CreditCard,
-  Scissors,
-  ChevronRight,
-  Star,
-  CheckCircle,
-  MapPin,
-  Clock,
   ArrowRight,
+  MapPin,
+  Star,
+  Check,
+  Smartphone,
+  Calendar,
 } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Навигационная панель */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-lg shadow-md shadow-indigo-500/30">
-              D
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight text-slate-900">DIKIDI</span>
-              <span className="ml-1.5 text-xs px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-bold border border-indigo-200">
-                UZ
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-black selection:text-white">
+      {/* Навигация */}
+      <header className="sticky top-0 z-40 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-black/[0.06]">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-semibold text-base tracking-[-0.03em] text-neutral-900">
+              DIKIDI
+            </span>
+            <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-black/[0.06] text-neutral-600 tracking-wider">
+              UZ
+            </span>
+          </Link>
 
           <div className="flex items-center gap-3">
             <Link
               href="/b/bro-barbershop"
-              className="text-xs font-bold text-slate-600 hover:text-indigo-600 px-3 py-2 transition-colors hidden sm:block"
+              className="text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors hidden sm:block"
             >
-              Клиентская запись
+              Онлайн-запись
             </Link>
             <Link
               href="/dashboard"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+              className="h-8 px-3.5 rounded-full bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-all flex items-center gap-1 active:scale-[0.985]"
             >
-              Войти в CRM <ChevronRight className="w-3.5 h-3.5" />
+              Вход в CRM
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5" /> Создано специально для рынка Узбекистана
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            Сервис онлайн-записи и CRM <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-              нового поколения
-            </span>
-          </h1>
-
-          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            Платформа объединяет клиентов и мастеров бьюти-сферы Узбекистана: запись в 2 клика через
-            Telegram Mini App, автоматические напоминания, журнал расписания и касса в сумах (UZS).
+      {/* Hero */}
+      <main className="flex-1 max-w-5xl mx-auto px-6 pt-16 pb-20 w-full space-y-16">
+        <section className="space-y-4 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400">
+            Узбекистан · Сервис записи
           </p>
-        </div>
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-[-0.04em] text-neutral-950 leading-[1.08]">
+            Онлайн-запись и CRM для сферы услуг
+          </h1>
+          <p className="text-base text-neutral-500 leading-relaxed font-normal">
+            Единая платформа для мастеров, салонов и клиентов. Мгновенная бронь без звонков, Telegram Mini App и касса в сумах UZS.
+          </p>
+        </section>
 
-        {/* ДВА ГЛАВНЫХ ПОРТАЛА (Для Клиента и Для Бизнеса) */}
-        <div className="max-w-5xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Две основные части: Клиент и Салон */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Портал 1: ДЛЯ КЛИЕНТОВ */}
-          <div className="bg-white rounded-3xl p-7 border-2 border-slate-200/80 shadow-sm hover:border-indigo-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                <Smartphone className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                  Часть 1: Для клиентов
+          <div className="bg-white rounded-3xl p-8 border border-black/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between group">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-neutral-400 tracking-tight">
+                  Для клиентов
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-1">
-                  Онлайн-запись и выбор мастера
-                </h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Записывайтесь на стрижку, маникюр или спа без звонков и долгого ожидания ответа в Instagram.
-                  Смотрите реальные свободные окна и получайте напоминание в Telegram.
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-neutral-900">
+                  Запись в два клика
+                </h2>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Выбирайте услугу, мастера и реальное свободное окно. Работает в браузере и прямо в Telegram.
                 </p>
               </div>
 
-              {/* Пример карточки салона */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+              {/* Пример карточки реального салона */}
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-slate-900">Bro Barbershop Tashkent</span>
-                  <div className="flex items-center text-amber-500 font-bold text-xs">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 mr-1" /> 4.95
-                  </div>
+                  <span className="text-xs font-semibold text-neutral-900">
+                    Bro Barbershop Tashkent
+                  </span>
+                  <span className="text-xs font-medium text-neutral-600 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.95
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-indigo-500 shrink-0" /> Мирабадский р-н, ул. Шевченко, 21
+                <p className="text-[11px] text-neutral-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-neutral-400 shrink-0" /> ул. Тараса Шевченко, 21
                 </p>
               </div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-8">
               <Link
                 href="/b/bro-barbershop"
-                className="w-full py-3.5 px-5 bg-slate-900 group-hover:bg-indigo-600 text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-slate-900/10"
+                className="w-full h-11 px-5 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 active:scale-[0.985]"
               >
-                <span>Записаться онлайн (Виджет клиента)</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Открыть запись</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
-          {/* Портал 2: ДЛЯ МАСТЕРОВ И САЛОНОВ */}
-          <div className="bg-white rounded-3xl p-7 border-2 border-slate-200/80 shadow-sm hover:border-indigo-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-violet-600">
-                  Часть 2: Для мастеров и салонов
+          {/* Портал 2: ДЛЯ САЛОНОВ И МАСТЕРОВ */}
+          <div className="bg-white rounded-3xl p-8 border border-black/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between group">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-neutral-400 tracking-tight">
+                  Для мастеров и салонов
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-1">
-                  Business CRM & Календарь
-                </h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Полная автоматизация вашего бизнеса: журнал записей с защитой от накладок, база клиентов,
-                  расчет зарплаты мастеров, учет оплат (Click / Payme / Наличные) и персональная ссылка для Instagram.
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-neutral-900">
+                  Business CRM
+                </h2>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Журнал расписания без накладок, история клиентов, расчет зарплат и персональная ссылка для шапки Instagram.
                 </p>
               </div>
 
-              {/* Метрики CRM */}
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-slate-400 text-[10px]">Журнал записей</p>
-                  <p className="font-bold text-slate-800 mt-0.5">В реальном времени</p>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                  <p className="text-[10px] uppercase font-medium text-neutral-400">Напоминания</p>
+                  <p className="font-semibold text-neutral-900 mt-1">В Telegram-бот</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-slate-400 text-[10px]">Напоминания</p>
-                  <p className="font-bold text-slate-800 mt-0.5">Через Telegram-бот</p>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                  <p className="text-[10px] uppercase font-medium text-neutral-400">Касса</p>
+                  <p className="font-semibold text-neutral-900 mt-1">В сумах UZS</p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-8">
               <Link
                 href="/dashboard"
-                className="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20"
+                className="w-full h-11 px-5 rounded-full bg-white text-neutral-900 border border-neutral-300 text-xs font-semibold hover:border-neutral-900 transition-all flex items-center justify-center gap-2 active:scale-[0.985]"
               >
-                <span>Войти в панель мастера (Business CRM)</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Войти в панель CRM</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Особенности для Узбекистана */}
-      <section className="bg-white border-t border-slate-200 py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center space-y-2 mb-12">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              Почему наше решение лучше зарубежных аналогов в Узбекистане
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              DIKIDI и Altegio сложны в настройке и не учитывают особенности местного рынка
+        {/* Локальные преимущества (Без AI-slop сеток из 3 одинаковых карточек) */}
+        <section className="bg-white rounded-3xl p-8 border border-black/[0.08] space-y-6">
+          <div className="max-w-md">
+            <h3 className="text-xl font-semibold tracking-tight text-neutral-900">
+              Оптимизировано для рынка Узбекистана
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1">
+              Учитывает привычки местных клиентов и потребности бизнеса
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-              <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
-                <Send className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-slate-900">Telegram Mini App</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Клиенты записываются прямо в Telegram. Напоминания приходят через бота бесплатно и без затрат на SMS.
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 text-xs">
+            <div className="space-y-1.5">
+              <p className="font-semibold text-neutral-900 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-neutral-900" />
+                Telegram Mini App вместо скачивания приложений
+              </p>
+              <p className="text-neutral-500 leading-relaxed pl-5">
+                Клиент переходит по ссылке из Instagram и сразу видит свободные окна мастера внутри Telegram. Напоминания приходят через бота бесплатно.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-slate-900">Click & Payme</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Поддержка местных платежных систем для предоплаты или депозита. Никаких «не пришел без предупреждения».
+            <div className="space-y-1.5">
+              <p className="font-semibold text-neutral-900 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-neutral-900" />
+                Локальные платежные шлюзы
+              </p>
+              <p className="text-neutral-500 leading-relaxed pl-5">
+                Поддержка Click, Payme и Uzum Pay для приема предоплаты или депозита. Никаких неявок без предупреждения.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-slate-900">Номера +998 и SMS</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Интеграция с локальными шлюзами Eskiz.uz и PlayMobile. Быстрая авторизация по узбекскому номеру.
+            <div className="space-y-1.5">
+              <p className="font-semibold text-neutral-900 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-neutral-900" />
+                Авторизация по номеру +998
+              </p>
+              <p className="text-neutral-500 leading-relaxed pl-5">
+                Коды подтверждения сначала бесплатно отправляются в Telegram пользователю. Если чата нет, подключается локальный SMS шлюз Eskiz.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
-                <Users className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-slate-900">Узбекский & Русский</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Полная локализация на узбекский (латиница) и русский языки во всех интерфейсах и шаблонах сообщений.
+            <div className="space-y-1.5">
+              <p className="font-semibold text-neutral-900 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-neutral-900" />
+                Узбекский и русский языки
+              </p>
+              <p className="text-neutral-500 leading-relaxed pl-5">
+                Интерфейс и тексты автоматических уведомлений доступны на узбекском (латиница) и русском языках.
               </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* Футер */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        <p>© 2026 DIKIDI UZ — Платформа онлайн-записи для бьюти-сферы Узбекистана. Все права защищены.</p>
+      <footer className="border-t border-black/[0.06] py-6 px-6 text-center text-xs text-neutral-400">
+        <p>© 2026 DIKIDI UZ. Ташкент, Узбекистан.</p>
       </footer>
     </div>
   );

@@ -2,19 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar,
   Clock,
-  User,
   MapPin,
   Star,
-  CheckCircle2,
+  Check,
   ChevronRight,
   ChevronLeft,
-  Scissors,
-  Phone,
+  ArrowRight,
   Send,
-  Sparkles,
 } from "lucide-react";
 import { formatUZS, formatPhoneUZ } from "@/lib/utils";
 
@@ -62,10 +59,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Шаги бронирования: 1 = Услуга, 2 = Мастер, 3 = Дата и Время, 4 = Контакты, 5 = Успех
+  // Шаги: 1: Услуга, 2: Мастер, 3: Время, 4: Контакты, 5: Подтверждение
   const [step, setStep] = useState(1);
 
-  // Выбранные данные
+  // Данные выбора
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | "any">("any");
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -73,11 +70,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Telegram данные
-  const [isInsideTelegram, setIsInsideTelegram] = useState(false);
+  // Telegram окружение
   const [tgUser, setTgUser] = useState<any>(null);
 
-  // Контакты клиента
+  // Форма клиента
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("+998 ");
   const [clientComment, setClientComment] = useState("");
@@ -91,7 +87,6 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
       const tg = (window as any).Telegram.WebApp;
       tg.ready();
       tg.expand();
-      setIsInsideTelegram(true);
 
       const user = tg.initDataUnsafe?.user;
       if (user) {
@@ -104,7 +99,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
   // Загрузка данных салона
   useEffect(() => {
-    async function fetchSalon() {
+    const fetchSalon = async () => {
       try {
         const res = await fetch(`/api/salons/${slug}`);
         const data = await res.json();
@@ -116,11 +111,11 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
       } finally {
         setLoading(false);
       }
-    }
+    };
     fetchSalon();
   }, [slug]);
 
-  // Дни для выбора (сегодня + следующие 6 дней)
+  // Дни для выбора (7 дней вперед)
   const daysList = React.useMemo(() => {
     const list = [];
     const today = new Date();
@@ -132,20 +127,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
       const dd = String(d.getDate()).padStart(2, "0");
       const dateStr = `${yyyy}-${mm}-${dd}`;
 
-      const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+      const dayNames = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
       const monthNames = [
-        "янв",
-        "фев",
-        "мар",
-        "апр",
-        "май",
-        "июн",
-        "июл",
-        "авг",
-        "сен",
-        "окт",
-        "ноя",
-        "дек",
+        "янв", "фев", "мар", "апр", "май", "июн",
+        "июл", "авг", "сен", "окт", "ноя", "дек"
       ];
 
       list.push({
@@ -153,20 +138,18 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
         dayOfWeek: dayNames[d.getDay()],
         dayNum: d.getDate(),
         month: monthNames[d.getMonth()],
-        isToday: i === 0,
       });
     }
     return list;
   }, []);
 
-  // Установка сегодняшней даты по умолчанию при переходе на шаг 3
   useEffect(() => {
     if (step === 3 && !selectedDate && daysList.length > 0) {
       setSelectedDate(daysList[0].dateStr);
     }
   }, [step, selectedDate, daysList]);
 
-  // Загрузка слотов при смене даты, мастера или услуги
+  // Загрузка слотов времени
   useEffect(() => {
     if (step === 3 && selectedService && selectedDate) {
       const fetchSlots = async () => {
@@ -175,7 +158,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
         try {
           const staffParam = selectedStaff === "any" ? "any" : selectedStaff.id;
           const res = await fetch(
-            `/api/salons/${slug}/slots?date=${selectedDate}&serviceId=${selectedService?.id}&staffId=${staffParam}`
+            `/api/salons/${slug}/slots?date=${selectedDate}&serviceId=${selectedService.id}&staffId=${staffParam}`
           );
           const data = await res.json();
           if (data.slots) {
@@ -194,11 +177,11 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
     }
   }, [step, slug, selectedService, selectedStaff, selectedDate]);
 
-  // Отправка бронирования
+  // Отправка формы бронирования
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || clientPhone.replace(/\D/g, "").length < 9) {
-      setErrorMsg("Пожалуйста, введите имя и корректный номер телефона Узбекистана");
+      setErrorMsg("Укажите имя и телефон в формате +998");
       return;
     }
 
@@ -227,12 +210,12 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || "Не удалось создать запись");
+        setErrorMsg(data.error || "Ошибка бронирования");
         return;
       }
 
       setConfirmedAppointment(data.appointment);
-      setStep(5); // Экран успешной записи
+      setStep(5);
     } catch (err) {
       setErrorMsg("Ошибка сети при отправке записи");
     } finally {
@@ -242,10 +225,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-slate-500">Загрузка онлайн-записи...</p>
+          <div className="w-5 h-5 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-medium tracking-tight text-neutral-500">Загрузка...</span>
         </div>
       </div>
     );
@@ -253,13 +236,13 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
   if (!salon) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border text-center max-w-sm">
-          <h2 className="text-lg font-bold text-slate-900">Салон не найден</h2>
-          <p className="text-sm text-slate-500 mt-1">Проверьте правильность ссылки.</p>
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-6">
+        <div className="max-w-sm w-full bg-white rounded-3xl p-8 border border-neutral-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-center space-y-4">
+          <p className="text-sm font-semibold text-neutral-900">Салон не найден</p>
+          <p className="text-xs text-neutral-500">Возможно, ссылка изменилась или салон временно недоступен.</p>
           <Link
             href="/"
-            className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold"
+            className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors"
           >
             На главную
           </Link>
@@ -269,22 +252,23 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-start items-center p-0 sm:py-6">
-      <div className="w-full max-w-lg bg-white sm:rounded-3xl shadow-lg border-0 sm:border border-slate-200 overflow-hidden flex flex-col min-h-screen sm:min-h-[780px]">
-        {/* Шапка салона */}
-        <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-5 pt-7">
-          <div className="flex items-start justify-between">
+    <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col items-center justify-start py-0 sm:py-10 px-0 sm:px-4">
+      {/* Главный контейнер (Mobile Frame) */}
+      <div className="w-full max-w-[480px] bg-white sm:rounded-[32px] sm:border border-black/[0.08] sm:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col min-h-screen sm:min-h-[740px]">
+        
+        {/* Верхний бар салона (Apple-style Header) */}
+        <header className="px-6 pt-7 pb-5 border-b border-neutral-100 bg-white">
+          <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
-                <Sparkles className="w-3 h-3" /> Онлайн-запись {isInsideTelegram && "• Telegram"}
-              </span>
-              <h1 className="text-xl font-bold tracking-tight">{salon.name}</h1>
-              <p className="text-xs text-slate-300 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                {salon.address}
+              <h1 className="text-lg font-semibold tracking-[-0.02em] text-neutral-900 leading-tight">
+                {salon.name}
+              </h1>
+              <p className="text-xs text-neutral-500 flex items-center gap-1 leading-normal">
+                <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="truncate">{salon.address}</span>
               </p>
             </div>
-            <div className="flex items-center gap-1 bg-amber-400/20 border border-amber-400/30 px-2 py-1 rounded-xl text-amber-300 text-xs font-bold">
+            <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-50 border border-neutral-200/70 text-xs font-medium text-neutral-700">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               <span>{salon.rating.toFixed(1)}</span>
             </div>
@@ -292,439 +276,461 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
           {/* Индикатор шагов */}
           {step < 5 && (
-            <div className="mt-5 grid grid-cols-4 gap-1.5 pt-2 border-t border-white/10">
-              {[
-                { s: 1, label: "Услуга" },
-                { s: 2, label: "Мастер" },
-                { s: 3, label: "Время" },
-                { s: 4, label: "Данные" },
-              ].map((item) => (
-                <div key={item.s} className="flex flex-col items-center">
-                  <div
-                    className={`h-1.5 w-full rounded-full transition-all duration-300 ${
-                      step >= item.s ? "bg-indigo-400" : "bg-white/20"
-                    }`}
-                  />
-                  <span
-                    className={`text-[11px] mt-1 ${
-                      step >= item.s ? "text-indigo-200 font-semibold" : "text-white/40"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </div>
+            <div className="mt-5 flex items-center gap-1.5">
+              {[1, 2, 3, 4].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                    step >= s ? "bg-neutral-900" : "bg-neutral-100"
+                  }`}
+                />
               ))}
             </div>
           )}
-        </div>
+        </header>
 
-        {/* Контент шагов */}
-        <div className="flex-1 p-5 overflow-y-auto">
-          {/* ШАГ 1: ВЫБОР УСЛУГИ */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-1">
-                <h2 className="text-base font-bold text-slate-900">Выберите услугу:</h2>
-                <span className="text-xs text-slate-400">Цены в сумах UZS</span>
-              </div>
+        {/* Интерактивный контент с анимациями переходов */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            {/* ШАГ 1: ВЫБОР УСЛУГИ */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-neutral-900">
+                    Выберите услугу
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-0.5">Цены указаны в сумах UZS</p>
+                </div>
 
-              {salon.categories.map((category) => (
-                <div key={category.id} className="space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-                    {category.nameRu}
-                  </h3>
-                  <div className="space-y-2">
-                    {category.services.map((service) => {
-                      const isSelected = selectedService?.id === service.id;
-                      return (
-                        <div
-                          key={service.id}
-                          onClick={() => setSelectedService(service)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                            isSelected
-                              ? "border-indigo-600 bg-indigo-50/70 shadow-sm ring-2 ring-indigo-500/20"
-                              : "border-slate-200 bg-white hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            <p className="text-sm font-bold text-slate-900">{service.nameRu}</p>
-                            {service.description && (
-                              <p className="text-xs text-slate-500 line-clamp-1">
-                                {service.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              <span>{service.durationMinutes} мин</span>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-sm font-extrabold text-indigo-600">
-                              {formatUZS(service.price)}
-                            </span>
-                            <div className="mt-1 flex justify-end">
-                              <div
-                                className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                                  isSelected
-                                    ? "bg-indigo-600 border-indigo-600 text-white"
-                                    : "border-slate-300 bg-white"
-                                }`}
-                              >
-                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                <div className="space-y-6">
+                  {salon.categories.map((category) => (
+                    <div key={category.id} className="space-y-2">
+                      <h3 className="text-[11px] font-medium uppercase tracking-[0.06em] text-neutral-400 px-1">
+                        {category.nameRu}
+                      </h3>
+                      <div className="space-y-1.5">
+                        {category.services.map((service) => {
+                          const isSelected = selectedService?.id === service.id;
+                          return (
+                            <div
+                              key={service.id}
+                              onClick={() => setSelectedService(service)}
+                              className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? "border-neutral-900 bg-neutral-50 shadow-sm"
+                                  : "border-neutral-200/70 bg-white hover:border-neutral-300"
+                              }`}
+                            >
+                              <div className="space-y-1 pr-2">
+                                <p className="text-sm font-medium tracking-tight text-neutral-900">
+                                  {service.nameRu}
+                                </p>
+                                {service.description && (
+                                  <p className="text-xs text-neutral-500 leading-relaxed line-clamp-1">
+                                    {service.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{service.durationMinutes} мин</span>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 flex items-center gap-3">
+                                <span className="text-sm font-semibold text-neutral-900">
+                                  {formatUZS(service.price)}
+                                </span>
+                                <div
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                                    isSelected
+                                      ? "bg-neutral-900 border-neutral-900 text-white"
+                                      : "border-neutral-300 bg-white"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="w-3 h-3" />}
+                                </div>
                               </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ШАГ 2: ВЫБОР МАСТЕРА */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-5"
+              >
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-neutral-900">
+                    Выберите мастера
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-0.5">К кому вы хотите записаться</p>
+                </div>
+
+                {/* Опция: Любой мастер */}
+                <div
+                  onClick={() => setSelectedStaff("any")}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    selectedStaff === "any"
+                      ? "border-neutral-900 bg-neutral-50 shadow-sm"
+                      : "border-neutral-200/70 bg-white hover:border-neutral-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-semibold text-neutral-700">
+                      ★
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900">Любой мастер</p>
+                      <p className="text-xs text-neutral-500">Ближайшее доступное окно</p>
+                    </div>
+                  </div>
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                      selectedStaff === "any"
+                        ? "bg-neutral-900 border-neutral-900 text-white"
+                        : "border-neutral-300 bg-white"
+                    }`}
+                  >
+                    {selectedStaff === "any" && <Check className="w-3 h-3" />}
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <h3 className="text-[11px] font-medium uppercase tracking-[0.06em] text-neutral-400 px-1">
+                    Специалисты
+                  </h3>
+                  <div className="space-y-1.5">
+                    {salon.staff.map((master) => {
+                      const isSelected = selectedStaff !== "any" && selectedStaff.id === master.id;
+                      return (
+                        <div
+                          key={master.id}
+                          onClick={() => setSelectedStaff(master)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? "border-neutral-900 bg-neutral-50 shadow-sm"
+                              : "border-neutral-200/70 bg-white hover:border-neutral-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <img
+                              src={master.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
+                              alt={master.fullName}
+                              className="w-11 h-11 rounded-full object-cover border border-neutral-200"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-neutral-900">{master.fullName}</p>
+                              <p className="text-xs text-neutral-500">{master.specialty}</p>
+                              <div className="flex items-center gap-1 mt-0.5 text-xs text-neutral-700">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                <span className="font-semibold">{master.rating.toFixed(1)}</span>
+                                <span className="text-neutral-400 text-[11px]">({master.reviewCount})</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                              isSelected
+                                ? "bg-neutral-900 border-neutral-900 text-white"
+                                : "border-neutral-300 bg-white"
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3" />}
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {/* ШАГ 2: ВЫБОР МАСТЕРА */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="pb-1">
-                <h2 className="text-base font-bold text-slate-900">Выберите специалиста:</h2>
-                <p className="text-xs text-slate-500">К кому вы хотите записаться?</p>
-              </div>
-
-              {/* Опция: Любой мастер */}
-              <div
-                onClick={() => setSelectedStaff("any")}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                  selectedStaff === "any"
-                    ? "border-indigo-600 bg-indigo-50/70 shadow-sm ring-2 ring-indigo-500/20"
-                    : "border-slate-200 bg-white hover:border-slate-300"
-                }`}
+            {/* ШАГ 3: ДАТА И ВРЕМЯ */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Любой свободный мастер</p>
-                    <p className="text-xs text-slate-500">Система выберет ближайшее свободное окно</p>
-                  </div>
-                </div>
-                <div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-                    selectedStaff === "any"
-                      ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "border-slate-300"
-                  }`}
-                >
-                  {selectedStaff === "any" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                </div>
-              </div>
-
-              {/* Список мастеров */}
-              <div className="space-y-2.5 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-                  Мастера салона
-                </h3>
-                {salon.staff.map((master) => {
-                  const isSelected = selectedStaff !== "any" && selectedStaff.id === master.id;
-                  return (
-                    <div
-                      key={master.id}
-                      onClick={() => setSelectedStaff(master)}
-                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isSelected
-                          ? "border-indigo-600 bg-indigo-50/70 shadow-sm ring-2 ring-indigo-500/20"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={master.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-                          alt={master.fullName}
-                          className="w-12 h-12 rounded-full object-cover border border-slate-200"
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{master.fullName}</p>
-                          <p className="text-xs text-slate-500">{master.specialty}</p>
-                          <div className="flex items-center gap-1 mt-1 text-xs text-amber-500 font-bold">
-                            <Star className="w-3 h-3 fill-amber-400" />
-                            <span>{master.rating.toFixed(1)}</span>
-                            <span className="text-slate-400 font-normal">
-                              ({master.reviewCount} отзывов)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center border ${
-                          isSelected
-                            ? "bg-indigo-600 border-indigo-600 text-white"
-                            : "border-slate-300"
-                        }`}
-                      >
-                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ШАГ 3: ДАТА И ВРЕМЯ */}
-          {step === 3 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Выберите дату:</h2>
-                {/* Календарная горизонтальная полоса */}
-                <div className="flex gap-2 overflow-x-auto py-2.5 scrollbar-none">
-                  {daysList.map((item) => {
-                    const isSelected = selectedDate === item.dateStr;
-                    return (
-                      <button
-                        key={item.dateStr}
-                        onClick={() => setSelectedDate(item.dateStr)}
-                        className={`flex flex-col items-center justify-center min-w-[62px] py-2.5 px-2 rounded-2xl border transition-all ${
-                          isSelected
-                            ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                        }`}
-                      >
-                        <span className={`text-[11px] font-medium ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>
-                          {item.dayOfWeek}
-                        </span>
-                        <span className="text-base font-extrabold my-0.5">{item.dayNum}</span>
-                        <span className={`text-[10px] uppercase tracking-wide ${isSelected ? "text-indigo-200" : "text-slate-400"}`}>
-                          {item.month}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Слоты времени */}
-              <div>
-                <div className="flex items-center justify-between pb-2">
-                  <h3 className="text-sm font-bold text-slate-900">Свободное время:</h3>
-                  {loadingSlots && (
-                    <span className="text-xs text-indigo-600 flex items-center gap-1 font-medium">
-                      <span className="w-2.5 h-2.5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
-                      Поиск окон...
-                    </span>
-                  )}
-                </div>
-
-                {!loadingSlots && availableSlots.length === 0 ? (
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
-                    <p className="text-sm font-semibold text-slate-700">На этот день нет свободных окон</p>
-                    <p className="text-xs text-slate-400 mt-1">Пожалуйста, выберите другую дату или другого мастера.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {availableSlots.map((time) => {
-                      const isSelected = selectedTime === time;
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-neutral-900">
+                    Выберите день
+                  </h2>
+                  <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
+                    {daysList.map((item) => {
+                      const isSelected = selectedDate === item.dateStr;
                       return (
                         <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={`py-2.5 px-1 rounded-xl text-center text-sm font-bold transition-all border ${
+                          key={item.dateStr}
+                          type="button"
+                          onClick={() => setSelectedDate(item.dateStr)}
+                          className={`flex flex-col items-center justify-center min-w-[58px] py-2.5 px-2 rounded-2xl border transition-all ${
                             isSelected
-                              ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
-                              : "bg-white border-slate-200 text-slate-800 hover:border-indigo-300"
+                              ? "border-neutral-900 bg-neutral-900 text-white shadow-sm"
+                              : "border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300"
                           }`}
                         >
-                          {time}
+                          <span className={`text-[10px] uppercase font-medium ${isSelected ? "text-neutral-300" : "text-neutral-400"}`}>
+                            {item.dayOfWeek}
+                          </span>
+                          <span className="text-base font-semibold my-0.5">{item.dayNum}</span>
+                          <span className={`text-[9px] uppercase ${isSelected ? "text-neutral-300" : "text-neutral-400"}`}>
+                            {item.month}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between pb-2">
+                    <h3 className="text-sm font-semibold tracking-tight text-neutral-900">
+                      Свободные слоты
+                    </h3>
+                    {loadingSlots && (
+                      <span className="text-xs text-neutral-400 font-medium flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full border-2 border-neutral-900 border-t-transparent animate-spin" />
+                        Поиск окон...
+                      </span>
+                    )}
+                  </div>
+
+                  {!loadingSlots && availableSlots.length === 0 ? (
+                    <div className="bg-neutral-50 rounded-2xl p-6 text-center border border-neutral-200/60">
+                      <p className="text-xs font-medium text-neutral-700">Нет свободных окон на этот день</p>
+                      <p className="text-[11px] text-neutral-400 mt-1">Попробуйте выбрать другую дату</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableSlots.map((time) => {
+                        const isSelected = selectedTime === time;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setSelectedTime(time)}
+                            className={`py-2.5 px-1 rounded-xl text-center text-xs font-semibold tracking-tight transition-all border ${
+                              isSelected
+                                ? "bg-neutral-900 border-neutral-900 text-white shadow-sm"
+                                : "bg-white border-neutral-200/80 text-neutral-800 hover:border-neutral-300"
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ШАГ 4: КОНТАКТЫ */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-5"
+              >
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-neutral-900">
+                    Ваши данные
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-0.5">Для связи и напоминания о визите</p>
+                </div>
+
+                {/* Сводка визита (Editorial Receipt) */}
+                <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-200/70 space-y-2.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Услуга:</span>
+                    <span className="font-semibold text-neutral-900">{selectedService?.nameRu}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Мастер:</span>
+                    <span className="font-semibold text-neutral-900">
+                      {selectedStaff === "any" ? "Любой мастер" : selectedStaff.fullName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Дата и время:</span>
+                    <span className="font-semibold text-neutral-900">
+                      {selectedDate} в {selectedTime}
+                    </span>
+                  </div>
+                  <div className="border-t border-neutral-200/80 pt-2 flex justify-between items-center">
+                    <span className="text-xs font-medium text-neutral-700">К оплате:</span>
+                    <span className="text-sm font-semibold text-neutral-900">
+                      {formatUZS(selectedService?.price || 0)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Инпуты */}
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Имя
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Азиз"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 bg-white text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Номер телефона
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+998 (90) 123-45-67"
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 bg-white text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Комментарий (необязательно)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Особые пожелания к визиту"
+                      value={clientComment}
+                      onChange={(e) => setClientComment(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 bg-white text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {errorMsg && (
+                  <p className="text-xs text-red-600 font-medium px-1">{errorMsg}</p>
                 )}
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {/* ШАГ 4: ВВОД ДАННЫХ И ПОДТВЕРЖДЕНИЕ */}
-          {step === 4 && (
-            <form onSubmit={handleBookingSubmit} className="space-y-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Контактные данные:</h2>
-                <p className="text-xs text-slate-500">Для подтверждения записи и отправки напоминания</p>
-              </div>
-
-              {/* Сводка записи */}
-              <div className="bg-indigo-50/70 border border-indigo-200/70 rounded-2xl p-4 space-y-2">
-                <div className="flex justify-between items-start text-xs">
-                  <span className="text-slate-500">Услуга:</span>
-                  <span className="font-bold text-slate-900 text-right">{selectedService?.nameRu}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Мастер:</span>
-                  <span className="font-bold text-slate-900">
-                    {selectedStaff === "any" ? "Любой свободный мастер" : selectedStaff.fullName}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Дата и время:</span>
-                  <span className="font-bold text-indigo-700">
-                    {selectedDate} в {selectedTime}
-                  </span>
-                </div>
-                <div className="border-t border-indigo-200/50 pt-2 flex justify-between items-center">
-                  <span className="text-xs font-semibold text-slate-700">К оплате:</span>
-                  <span className="text-sm font-extrabold text-indigo-600">
-                    {formatUZS(selectedService?.price || 0)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Поля ввода */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Ваше имя <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Например, Азиз"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
-                  />
+            {/* ШАГ 5: ПОДТВЕРЖДЕНИЕ */}
+            {step === 5 && confirmedAppointment && (
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-6 text-center py-4"
+              >
+                <div className="w-12 h-12 bg-neutral-900 text-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <Check className="w-6 h-6" />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Номер телефона Узбекистана <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+998 (90) 123-45-67"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    На этот номер придет напоминание перед визитом
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
+                    Запись подтверждена
+                  </h2>
+                  <p className="text-xs text-neutral-500">
+                    Ждем вас в {salon.name}
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Комментарий для мастера (необязательно)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Пожелания, аллергии, ориентир"
-                    value={clientComment}
-                    onChange={(e) => setClientComment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
-                  />
+                {/* Чек */}
+                <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/80 text-left space-y-3">
+                  <div className="flex justify-between items-center text-xs pb-2 border-b border-neutral-200/70">
+                    <span className="text-neutral-500">Номер брони:</span>
+                    <span className="font-mono text-neutral-800">
+                      #{confirmedAppointment.id.slice(0, 8)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Услуга:</span>
+                    <span className="font-semibold text-neutral-900">{confirmedAppointment.service.nameRu}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Мастер:</span>
+                    <span className="font-semibold text-neutral-900">{confirmedAppointment.staff.fullName}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Время:</span>
+                    <span className="font-semibold text-neutral-900">{selectedDate} в {selectedTime}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Адрес:</span>
+                    <span className="font-medium text-neutral-800 text-right">{salon.address}</span>
+                  </div>
+                  <div className="border-t border-neutral-200/80 pt-2 flex justify-between items-center">
+                    <span className="text-xs font-medium text-neutral-600">Сумма:</span>
+                    <span className="text-sm font-semibold text-neutral-900">
+                      {formatUZS(confirmedAppointment.price)}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {errorMsg && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold">
-                  {errorMsg}
-                </div>
-              )}
-            </form>
-          )}
-
-          {/* ШАГ 5: УСПЕШНОЕ БРОНИРОВАНИЕ */}
-          {step === 5 && confirmedAppointment && (
-            <div className="space-y-6 text-center py-4">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                <CheckCircle2 className="w-10 h-10" />
-              </div>
-
-              <div className="space-y-1">
-                <h2 className="text-xl font-extrabold text-slate-900">Вы успешно записаны!</h2>
-                <p className="text-xs text-slate-500">
-                  Ждем вас в {salon.name}. Запись добавлена в рабочий журнал мастера.
-                </p>
-              </div>
-
-              {/* Чек */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-2.5">
-                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                  <span className="text-slate-500">Номер записи:</span>
-                  <span className="font-mono font-bold text-slate-800">
-                    #{confirmedAppointment.id.slice(0, 8)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Услуга:</span>
-                  <span className="font-bold text-slate-900">{confirmedAppointment.service.nameRu}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Мастер:</span>
-                  <span className="font-bold text-slate-900">{confirmedAppointment.staff.fullName}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Дата и время:</span>
-                  <span className="font-bold text-indigo-600">
-                    {selectedDate} в {selectedTime}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Адрес:</span>
-                  <span className="font-bold text-slate-900 text-right">{salon.address}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200">
-                  <span className="font-bold text-slate-700">Итого к оплате:</span>
-                  <span className="text-sm font-extrabold text-indigo-600">
-                    {formatUZS(confirmedAppointment.price)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Уведомление о Telegram */}
-              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl flex items-center gap-3 text-left">
-                <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">
-                  <Send className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-sky-950">Telegram-уведомление отправлено</p>
-                  <p className="text-[11px] text-sky-700">
-                    Детали записи и напоминание продублированы вам в Telegram-чат
+                <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/70 flex items-center gap-3 text-left">
+                  <Send className="w-4 h-4 text-neutral-600 shrink-0" />
+                  <p className="text-xs text-neutral-600 leading-normal">
+                    Детали визита и напоминание также отправлены в ваш Telegram.
                   </p>
                 </div>
-              </div>
 
-              <div className="pt-2 flex flex-col gap-2">
-                <Link
-                  href={`/b/${slug}`}
-                  onClick={() => {
-                    setStep(1);
-                    setSelectedService(null);
-                    setSelectedTime("");
-                  }}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-sm font-bold transition-all"
-                >
-                  Записаться на другую услугу
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-semibold transition-all"
-                >
-                  Перейти в панель мастера (CRM)
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(1);
+                      setSelectedService(null);
+                      setSelectedTime("");
+                    }}
+                    className="w-full h-11 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors"
+                  >
+                    Записаться еще раз
+                  </button>
+                  <Link
+                    href="/dashboard"
+                    className="w-full h-10 flex items-center justify-center rounded-full text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+                  >
+                    Перейти в панель CRM
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
 
-        {/* Нижняя фиксированная панель действий */}
+        {/* Фиксированная нижняя панель (Apple Action Bar) */}
         {step < 5 && (
-          <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-3">
+          <footer className="p-5 bg-white border-t border-neutral-100 flex items-center justify-between gap-3">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="px-4 py-3 rounded-2xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-bold flex items-center gap-1"
+                className="h-11 px-4 rounded-full border border-neutral-200 text-neutral-700 text-xs font-medium hover:bg-neutral-50 transition-colors flex items-center gap-1"
               >
                 <ChevronLeft className="w-4 h-4" /> Назад
               </button>
@@ -737,13 +743,13 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 type="button"
                 disabled={!selectedService}
                 onClick={() => setStep(2)}
-                className={`flex-1 py-3 px-5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 h-11 px-5 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-[0.985] ${
                   selectedService
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    ? "bg-neutral-900 text-white hover:bg-neutral-800 shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
+                    : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
                 }`}
               >
-                Далее: Выбор мастера <ChevronRight className="w-4 h-4" />
+                Выбрать мастера <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
 
@@ -751,9 +757,9 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="flex-1 py-3 px-5 rounded-2xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2"
+                className="flex-1 h-11 px-5 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-1.5 active:scale-[0.985] shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
               >
-                Далее: Выбор времени <ChevronRight className="w-4 h-4" />
+                Выбрать дату и время <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
 
@@ -762,13 +768,13 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 type="button"
                 disabled={!selectedTime}
                 onClick={() => setStep(4)}
-                className={`flex-1 py-3 px-5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 h-11 px-5 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-[0.985] ${
                   selectedTime
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    ? "bg-neutral-900 text-white hover:bg-neutral-800 shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
+                    : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
                 }`}
               >
-                Далее: Ввод данных <ChevronRight className="w-4 h-4" />
+                Ввести данные <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
 
@@ -777,12 +783,12 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 type="button"
                 disabled={submitting}
                 onClick={handleBookingSubmit}
-                className="flex-1 py-3 px-5 rounded-2xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
+                className="flex-1 h-11 px-5 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-1.5 active:scale-[0.985] shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
               >
-                {submitting ? "Бронируем..." : "Подтвердить запись"}
+                {submitting ? "Бронирование..." : "Подтвердить запись"}
               </button>
             )}
-          </div>
+          </footer>
         )}
       </div>
     </div>

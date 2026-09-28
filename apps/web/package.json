@@ -12,6 +12,7 @@
     "@dikidi/database": "*",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "framer-motion": "^13.4.4",
     "lucide-react": "^0.460.0",
     "next": "^14.2.18",
     "react": "^18.3.1",
