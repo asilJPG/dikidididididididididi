@@ -34,6 +34,22 @@ export const api = {
     return res.json();
   },
 
+  // Расписание мастера
+  getStaffSchedule: async (staffId: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/staff/${staffId}/schedule`);
+    const data = await res.json();
+    return data.schedules || [];
+  },
+
+  updateStaffSchedule: async (staffId: string, schedules: any[]) => {
+    const res = await fetch(`${API_BASE_URL}/api/staff/${staffId}/schedule`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ schedules }),
+    });
+    return res.json();
+  },
+
   // Получение записей на выбранную дату
   getAppointments: async (
     salonId: string,

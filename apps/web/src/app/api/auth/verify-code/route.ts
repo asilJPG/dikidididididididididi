@@ -13,20 +13,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanedPhone = phone.replace(/[^\d+]/g, "");
+    let cleanedPhone = phone.replace(/[^\d+]/g, "");
+    if (!cleanedPhone.startsWith("+")) {
+      cleanedPhone = "+" + cleanedPhone;
+    }
+    const phoneWithoutPlus = cleanedPhone.replace("+", "");
 
-    // Ищем активный код или мастер-код для тестов (12121)
-    let isMasterCode = code === "12121" || code === "7777";
+    // Ищем активный код в базе данных
     const validCode = await prisma.verificationCode.findFirst({
       where: {
-        phone: cleanedPhone,
+        phone: { in: [cleanedPhone, phoneWithoutPlus] },
         code,
         isUsed: false,
         expiresAt: { gt: new Date() },
       },
     });
 
-    if (!validCode && !isMasterCode) {
+    if (!validCode) {
       return NextResponse.json(
         { error: "Неверный код или срок его действия истек" },
         { status: 400 }
@@ -42,8 +45,8 @@ export async function POST(request: Request) {
     }
 
     // Находим или создаем пользователя
-    let user = await prisma.user.findUnique({
-      where: { phone: cleanedPhone },
+    let user = await prisma.user.findFirst({
+      where: { phone: { in: [cleanedPhone, phoneWithoutPlus] } },
       include: {
         ownedSalons: true,
         staffProfile: {

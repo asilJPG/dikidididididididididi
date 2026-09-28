@@ -174,10 +174,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* ШАГ 2: ВВОД 5-ЗНАЧНОГО КОДА */}
         {step === "code" && (
           <View style={styles.form}>
-            <Text style={styles.label}>КОД ИЗ SMS (ПО УМОЛЧАНИЮ 12121)</Text>
+            <Text style={styles.label}>КОД ИЗ TELEGRAM ИЛИ SMS</Text>
             <TextInput
               style={[styles.input, styles.codeInput]}
-              placeholder="12121"
+              placeholder="00000"
               placeholderTextColor="#999"
               keyboardType="number-pad"
               maxLength={5}

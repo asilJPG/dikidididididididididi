@@ -11,33 +11,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Укажите номер телефона" }, { status: 400 });
     }
 
-    // Нормализация номера (только цифры и плюс)
-    const cleanedPhone = phone.replace(/[^\d+]/g, "");
+    // Нормализация номера
+    let cleanedPhone = phone.replace(/[^\d+]/g, "");
+    if (!cleanedPhone.startsWith("+")) {
+      cleanedPhone = "+" + cleanedPhone;
+    }
+    const phoneWithoutPlus = cleanedPhone.replace("+", "");
 
     // 1. Проверяем, есть ли пользователь или клиент с привязанным Telegram
     const existingCustomer = await prisma.customer.findFirst({
       where: {
-        phone: cleanedPhone,
+        phone: { in: [cleanedPhone, phoneWithoutPlus] },
         telegramChatId: { not: null },
       },
     });
 
     const existingUser = await prisma.user.findFirst({
       where: {
-        phone: cleanedPhone,
+        phone: { in: [cleanedPhone, phoneWithoutPlus] },
         telegramChatId: { not: null },
       },
     });
 
     const telegramChatId = existingUser?.telegramChatId || existingCustomer?.telegramChatId;
 
-    // 2. Генерируем OTP код (пока дефолт 12121)
-    const code = "12121";
+    // 2. Генерируем реальный случайный 5-значный OTP код
+    const code = Math.floor(10000 + Math.random() * 90000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
 
     // Удаляем старые неиспользованные коды для этого номера
     await prisma.verificationCode.deleteMany({
-      where: { phone: cleanedPhone },
+      where: { phone: { in: [cleanedPhone, phoneWithoutPlus] } },
     });
 
     const channel = telegramChatId ? "TELEGRAM" : "SMS";
@@ -54,13 +58,11 @@ export async function POST(request: Request) {
 
     // 3. Отправляем код
     if (telegramChatId) {
-      const res = await sendTelegramOtp(telegramChatId, code);
+      await sendTelegramOtp(telegramChatId, code);
       return NextResponse.json({
         success: true,
         channel: "TELEGRAM",
         message: "Код подтверждения отправлен в ваш Telegram!",
-        // В dev режиме показываем код для удобства тестирования
-        devCode: process.env.NODE_ENV !== "production" ? code : undefined,
       });
     } else {
       // Имитация отправки SMS через Eskiz.uz
@@ -68,8 +70,9 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         channel: "SMS",
-        message: "Код подтверждения отправлен по SMS",
-        devCode: code, // возвращаем для тестирования
+        message: "Код отправлен. Для бесплатного получения кодов запустите @q823374iawsdhfdiowue_bot",
+        // Если бот еще не привязан, возвращаем devCode в dev-режиме, чтобы не блокировать вход
+        devCode: process.env.NODE_ENV !== "production" ? code : undefined,
       });
     }
   } catch (err) {

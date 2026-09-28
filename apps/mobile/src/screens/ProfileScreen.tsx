@@ -20,11 +20,14 @@ import {
   Plus,
   Edit2,
   ChevronRight,
+  Calendar,
+  Clock,
 } from "lucide-react-native";
 import { Salon, User, Service, Staff } from "../types";
 import { API_BASE_URL, formatUZS } from "../config";
 import { ManageServiceModal } from "../components/ManageServiceModal";
 import { ManageStaffModal } from "../components/ManageStaffModal";
+import { ManageScheduleModal } from "../components/ManageScheduleModal";
 import { CreateSalonModal } from "../components/CreateSalonModal";
 
 interface ProfileScreenProps {
@@ -46,6 +49,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const [staffModalVisible, setStaffModalVisible] = useState(false);
   const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
+
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [staffForSchedule, setStaffForSchedule] = useState<Staff | null>(null);
+
+  const handleOpenSchedule = (st: Staff) => {
+    setStaffForSchedule(st);
+    setScheduleModalVisible(true);
+  };
 
   if (!salon) {
     return (
@@ -95,6 +106,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     currentUser?.role === "SALON_OWNER" ||
     (currentUser?.ownedSalons && currentUser.ownedSalons.length > 0) ||
     !currentUser?.staffProfile;
+
+  const myStaffProfile =
+    currentUser?.staffProfile ||
+    salon?.staff.find(
+      (st) =>
+        (currentUser?.phone && (st as any).phone === currentUser.phone) ||
+        st.fullName.toLowerCase() === currentUser?.fullName?.toLowerCase()
+    );
 
   const bookingUrl = `${API_BASE_URL}/b/${salon.slug}`;
 
@@ -164,6 +183,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         </View>
 
+        {/* Мой рабочий график (для мастера) */}
+        {myStaffProfile && (
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View style={styles.scheduleIconBadge}>
+                  <Calendar size={16} color="#111111" />
+                </View>
+                <Text style={styles.cardTitle}>Мой рабочий график</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleOpenSchedule(myStaffProfile)}
+                style={styles.addMiniBtn}
+                activeOpacity={0.7}
+              >
+                <Clock size={13} color="#111111" />
+                <Text style={styles.addMiniBtnText}>Настроить</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.cardSub}>
+              Рабочие и выходные дни, часы приёма и время обеденного перерыва
+            </Text>
+          </View>
+        )}
+
         {/* Ссылка на онлайн-запись */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Ссылка на онлайн-запись</Text>
@@ -202,27 +246,43 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
           <View style={styles.staffList}>
             {salon.staff.map((st) => (
-              <TouchableOpacity
-                key={st.id}
-                style={styles.staffItem}
-                onPress={() => handleOpenEditStaff(st)}
-                disabled={!isOwner}
-                activeOpacity={0.7}
-              >
-                <View style={styles.staffAvatar}>
-                  <Text style={styles.staffAvatarText}>
-                    {st.fullName.slice(0, 2).toUpperCase()}
-                  </Text>
+              <View key={st.id} style={styles.staffItem}>
+                <TouchableOpacity
+                  style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+                  onPress={() => isOwner && handleOpenEditStaff(st)}
+                  activeOpacity={isOwner ? 0.7 : 1}
+                >
+                  <View style={styles.staffAvatar}>
+                    <Text style={styles.staffAvatarText}>
+                      {st.fullName.slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.staffName}>{st.fullName}</Text>
+                    <Text style={styles.staffRole}>{st.specialty}</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={styles.staffRightActions}>
+                  <TouchableOpacity
+                    style={styles.scheduleMiniBtn}
+                    onPress={() => handleOpenSchedule(st)}
+                    activeOpacity={0.7}
+                  >
+                    <Clock size={12} color="#111111" />
+                    <Text style={styles.scheduleMiniBtnText}>График</Text>
+                  </TouchableOpacity>
+
+                  {isOwner && (
+                    <TouchableOpacity
+                      onPress={() => handleOpenEditStaff(st)}
+                      style={styles.percentBadge}
+                    >
+                      <Text style={styles.staffPercent}>{st.commissionPercent}%</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.staffName}>{st.fullName}</Text>
-                  <Text style={styles.staffRole}>{st.specialty}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end", gap: 2 }}>
-                  <Text style={styles.staffPercent}>{st.commissionPercent}%</Text>
-                  {isOwner && <Text style={styles.editHint}>Редакт.</Text>}
-                </View>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -282,6 +342,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         staffToEdit={staffToEdit}
         onClose={() => setStaffModalVisible(false)}
         onSuccess={() => onReloadSalon?.()}
+      />
+
+      <ManageScheduleModal
+        visible={scheduleModalVisible}
+        staff={staffForSchedule}
+        onClose={() => setScheduleModalVisible(false)}
+        onSaved={() => onReloadSalon?.()}
       />
     </ScrollView>
   );
@@ -477,6 +544,41 @@ const styles = StyleSheet.create({
   staffRole: {
     fontSize: 10,
     color: "#8e8e93",
+  },
+  scheduleIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "#f5f5f7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  staffRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  scheduleMiniBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f5f5f7",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  scheduleMiniBtnText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#111111",
+  },
+  percentBadge: {
+    backgroundColor: "#ecfdf5",
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   staffPercent: {
     fontSize: 12,
