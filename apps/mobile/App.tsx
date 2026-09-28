@@ -216,7 +216,6 @@ export default function App() {
             {activeClientTab === "client-profile" && (
               <ClientProfileScreen
                 currentUser={currentUser}
-                onSwitchToBusiness={() => setBusinessAuthVisible(true)}
                 onLogout={handleLogout}
                 onRequireLogin={() => {}}
               />

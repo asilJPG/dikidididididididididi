@@ -23,14 +23,12 @@ import { User } from "../types";
 
 interface ClientProfileScreenProps {
   currentUser: User | null;
-  onSwitchToBusiness: () => void;
   onLogout: () => void;
   onRequireLogin: () => void;
 }
 
 export const ClientProfileScreen: React.FC<ClientProfileScreenProps> = ({
   currentUser,
-  onSwitchToBusiness,
   onLogout,
   onRequireLogin,
 }) => {
@@ -89,20 +87,6 @@ export const ClientProfileScreen: React.FC<ClientProfileScreenProps> = ({
           <Text style={styles.menuTitle}>Политика конфиденциальности</Text>
           <ChevronRight size={16} color="#8e8e93" />
         </View>
-
-        {/* Неприметный пункт для партнеров */}
-        <TouchableOpacity
-          style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.05)" }]}
-          onPress={onSwitchToBusiness}
-        >
-          <View style={[styles.menuIcon, { backgroundColor: "#f5f5f7" }]}>
-            <Briefcase size={16} color="#8e8e93" />
-          </View>
-          <Text style={[styles.menuTitle, { color: "#8e8e93", fontSize: 12 }]}>
-            Для партнеров: DIKIDI Business
-          </Text>
-          <ChevronRight size={14} color="#8e8e93" />
-        </TouchableOpacity>
       </View>
 
       {/* Выход из аккаунта */}
