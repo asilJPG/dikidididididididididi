@@ -1,0 +1,93 @@
+import { API_BASE_URL } from "../config";
+import { Appointment, Salon, Customer } from "../types";
+
+export const api = {
+  // Получение салонов
+  getSalons: async (): Promise<Salon[]> => {
+    const res = await fetch(`${API_BASE_URL}/api/salons`);
+    const data = await res.json();
+    return data.salons || [];
+  },
+
+  // Получение деталей конкретного салона
+  getSalonBySlug: async (slug: string): Promise<Salon | null> => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/${slug}`);
+    const data = await res.json();
+    return data.salon || null;
+  },
+
+  // Получение записей на выбранную дату
+  getAppointments: async (
+    salonId: string,
+    date: string,
+    staffId: string = "all"
+  ): Promise<Appointment[]> => {
+    const res = await fetch(
+      `${API_BASE_URL}/api/appointments?salonId=${salonId}&date=${date}&staffId=${staffId}`
+    );
+    const data = await res.json();
+    return data.appointments || [];
+  },
+
+  // Обновление статуса записи
+  updateAppointmentStatus: async (
+    id: string,
+    status: string,
+    paymentStatus?: string
+  ): Promise<boolean> => {
+    const res = await fetch(`${API_BASE_URL}/api/appointments`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status, paymentStatus }),
+    });
+    return res.ok;
+  },
+
+  // Создание новой записи вручную
+  createAppointment: async (payload: {
+    salonId: string;
+    staffId: string;
+    serviceId: string;
+    date: string;
+    time: string;
+    clientName: string;
+    clientPhone: string;
+    clientComment?: string;
+  }): Promise<boolean> => {
+    const res = await fetch(`${API_BASE_URL}/api/appointments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  },
+
+  // Получение клиентов
+  getCustomers: async (salonId: string, query: string = ""): Promise<Customer[]> => {
+    const res = await fetch(
+      `${API_BASE_URL}/api/customers?salonId=${salonId}&query=${encodeURIComponent(query)}`
+    );
+    const data = await res.json();
+    return data.customers || [];
+  },
+
+  // Отправка OTP кода
+  sendAuthCode: async (phone: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/send-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+    return res.json();
+  },
+
+  // Проверка OTP кода
+  verifyAuthCode: async (phone: string, code: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, code }),
+    });
+    return res.json();
+  },
+};
