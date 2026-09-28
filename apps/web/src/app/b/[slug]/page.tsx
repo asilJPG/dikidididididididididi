@@ -709,13 +709,13 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                     }}
                     className="w-full h-11 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors"
                   >
-                    Записаться еще раз
+                    Записаться на другую услугу
                   </button>
                   <Link
-                    href="/dashboard"
+                    href="/"
                     className="w-full h-10 flex items-center justify-center rounded-full text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
                   >
-                    Перейти в панель CRM
+                    Вернуться к поиску заведений
                   </Link>
                 </div>
               </motion.div>
