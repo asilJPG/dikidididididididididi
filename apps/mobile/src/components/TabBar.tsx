@@ -1,21 +1,41 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
-import { Calendar, Users, DollarSign, Store } from "lucide-react-native";
+import {
+  Calendar,
+  Users,
+  DollarSign,
+  Store,
+  Search,
+  BookmarkCheck,
+  User,
+} from "lucide-react-native";
+import { AppMode } from "../types";
 
-export type TabKey = "journal" | "clients" | "finance" | "salon";
+export type BusinessTabKey = "journal" | "clients" | "finance" | "salon";
+export type ClientTabKey = "catalog" | "my-bookings" | "client-profile";
+export type TabKey = BusinessTabKey | ClientTabKey;
 
 interface TabBarProps {
+  mode: AppMode;
   currentTab: TabKey;
   onSelectTab: (tab: TabKey) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ currentTab, onSelectTab }) => {
-  const tabs = [
+export const TabBar: React.FC<TabBarProps> = ({ mode, currentTab, onSelectTab }) => {
+  const businessTabs = [
     { key: "journal" as TabKey, label: "Журнал", icon: Calendar },
     { key: "clients" as TabKey, label: "Клиенты", icon: Users },
     { key: "finance" as TabKey, label: "Касса", icon: DollarSign },
     { key: "salon" as TabKey, label: "Салон", icon: Store },
   ];
+
+  const clientTabs = [
+    { key: "catalog" as TabKey, label: "Каталог", icon: Search },
+    { key: "my-bookings" as TabKey, label: "Мои записи", icon: Calendar },
+    { key: "client-profile" as TabKey, label: "Профиль", icon: User },
+  ];
+
+  const tabs = mode === "business" ? businessTabs : clientTabs;
 
   return (
     <View style={styles.container}>

@@ -41,6 +41,13 @@ export interface Appointment {
   customer?: Customer;
 }
 
+export interface Category {
+  id: string;
+  nameRu: string;
+  nameUz?: string;
+  icon?: string;
+}
+
 export interface Salon {
   id: string;
   name: string;
@@ -52,6 +59,27 @@ export interface Salon {
   reviewCount: number;
   services: Service[];
   staff: Staff[];
+  categories?: Category[];
+}
+
+export interface Appointment {
+  id: string;
+  salonId: string;
+  staffId: string;
+  serviceId: string;
+  startDateTime: string;
+  endDateTime: string;
+  status: "PENDING" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  price: number;
+  clientName: string;
+  clientPhone: string;
+  clientComment?: string | null;
+  paymentMethod: string;
+  paymentStatus: string;
+  staff: Staff;
+  service: Service;
+  customer?: Customer;
+  salon?: Salon;
 }
 
 export interface User {
@@ -61,3 +89,5 @@ export interface User {
   role: string;
   ownedSalons?: Salon[];
 }
+
+export type AppMode = "client" | "business";

@@ -9,12 +9,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const salonId = searchParams.get("salonId");
     const dateStr = searchParams.get("date"); // YYYY-MM-DD
+    const clientPhone = searchParams.get("clientPhone") || searchParams.get("phone");
     const staffId = searchParams.get("staffId");
 
     let whereClause: any = {};
 
     if (salonId) {
       whereClause.salonId = salonId;
+    }
+
+    if (clientPhone) {
+      whereClause.clientPhone = clientPhone;
     }
 
     if (staffId && staffId !== "all") {
@@ -35,9 +40,10 @@ export async function GET(request: Request) {
         staff: true,
         service: true,
         customer: true,
+        salon: true,
       },
       orderBy: {
-        startDateTime: "asc",
+        startDateTime: "desc",
       },
     });
 

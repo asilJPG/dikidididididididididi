@@ -71,6 +71,59 @@ export const api = {
     return data.customers || [];
   },
 
+  // Получение записей клиента по номеру телефона
+  getClientAppointments: async (phone: string): Promise<Appointment[]> => {
+    const cleanPhone = phone.replace(/\s+/g, "");
+    const res = await fetch(
+      `${API_BASE_URL}/api/appointments?clientPhone=${encodeURIComponent(cleanPhone)}`
+    );
+    const data = await res.json();
+    return data.appointments || [];
+  },
+
+  // Получение доступных слотов для онлайн-записи
+  getAvailableSlots: async (
+    salonSlug: string,
+    serviceId: string,
+    date: string,
+    staffId: string = "any"
+  ): Promise<{ time: string; availableStaffIds: string[] }[]> => {
+    const res = await fetch(
+      `${API_BASE_URL}/api/salons/${salonSlug}/slots?date=${date}&serviceId=${serviceId}&staffId=${staffId}`
+    );
+    const data = await res.json();
+    return data.slots || [];
+  },
+
+  // Оформление клиентской брони
+  bookAppointment: async (payload: {
+    salonSlug: string;
+    serviceId: string;
+    staffId: string;
+    date: string;
+    time: string;
+    clientName: string;
+    clientPhone: string;
+    clientComment?: string;
+  }) => {
+    const res = await fetch(`${API_BASE_URL}/api/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  // Отмена записи клиентом
+  cancelAppointment: async (id: string): Promise<boolean> => {
+    const res = await fetch(`${API_BASE_URL}/api/appointments`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status: "CANCELLED" }),
+    });
+    return res.ok;
+  },
+
   // Отправка OTP кода
   sendAuthCode: async (phone: string) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/send-code`, {

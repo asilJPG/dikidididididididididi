@@ -9,16 +9,20 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { ShieldCheck, ArrowRight } from "lucide-react-native";
+import { ShieldCheck, ArrowRight, Sparkles } from "lucide-react-native";
 import { api } from "../services/api";
 import { authStorage } from "../services/auth";
-import { User } from "../types";
+import { User, AppMode } from "../types";
 
 interface LoginScreenProps {
-  onLoginSuccess: (user: User) => void;
+  onLoginSuccess: (user: User, preferredMode?: AppMode) => void;
+  onContinueAsGuest?: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLoginSuccess,
+  onContinueAsGuest,
+}) => {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("+998 ");
   const [code, setCode] = useState("");
@@ -70,7 +74,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
       if (res.user) {
         await authStorage.setUser(res.user);
-        onLoginSuccess(res.user);
+        // Если у пользователя есть салон, открываем бизнес, иначе клиентский режим
+        const hasSalon = res.user.ownedSalons && res.user.ownedSalons.length > 0;
+        onLoginSuccess(res.user, hasSalon ? "business" : "client");
       }
     } catch {
       setError("Ошибка при проверке кода");
@@ -79,13 +85,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleQuickLogin = async (demoPhone: string) => {
+  const handleQuickLogin = async (demoPhone: string, preferredMode: AppMode) => {
     setLoading(true);
     try {
       const res = await api.verifyAuthCode(demoPhone, "7777");
       if (res.user) {
         await authStorage.setUser(res.user);
-        onLoginSuccess(res.user);
+        onLoginSuccess(res.user, preferredMode);
       }
     } catch {
       setError("Ошибка демо-входа");
@@ -104,8 +110,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <View style={styles.logoBadge}>
             <Text style={styles.logoText}>D</Text>
           </View>
-          <Text style={styles.title}>DIKIDI Business</Text>
-          <Text style={styles.subtitle}>Вход для владельцев салонов и мастеров</Text>
+          <Text style={styles.title}>DIKIDI</Text>
+          <Text style={styles.subtitle}>
+            Единое приложение для клиентов и мастеров Узбекистана
+          </Text>
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -139,6 +147,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 </View>
               )}
             </TouchableOpacity>
+
+            {onContinueAsGuest && (
+              <TouchableOpacity
+                onPress={onContinueAsGuest}
+                style={styles.guestBtn}
+              >
+                <Text style={styles.guestBtnText}>Продолжить без входа (Каталог)</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <View style={styles.form}>
@@ -170,7 +187,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               {loading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text style={styles.primaryBtnText}>Войти в кабинет</Text>
+                <Text style={styles.primaryBtnText}>Войти</Text>
               )}
             </TouchableOpacity>
 
@@ -189,13 +206,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
         {/* Быстрый вход для демо */}
         <View style={styles.demoSection}>
-          <Text style={styles.demoTitle}>БЫСТРЫЙ ВХОД ДЛЯ ТЕСТА</Text>
+          <Text style={styles.demoTitle}>БЫСТРЫЙ ТЕСТОВЫЙ ВХОД</Text>
+
           <TouchableOpacity
-            onPress={() => handleQuickLogin("+998901234567")}
+            onPress={() => handleQuickLogin("+998901234567", "business")}
             style={styles.demoBtn}
           >
-            <Text style={styles.demoBtnText}>Bro Barbershop (Сардор Алимов)</Text>
-            <Text style={styles.demoBtnPhone}>+998 90 123-45-67</Text>
+            <View>
+              <Text style={styles.demoBtnText}>💼 Bro Barbershop (Мастер / Бизнес)</Text>
+              <Text style={styles.demoBtnPhone}>+998 90 123-45-67</Text>
+            </View>
+            <ArrowRight size={14} color="#8e8e93" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => handleQuickLogin("+998909998877", "client")}
+            style={[styles.demoBtn, { marginTop: 6 }]}
+          >
+            <View>
+              <Text style={styles.demoBtnText}>💇 Жасур Каримов (Клиент)</Text>
+              <Text style={styles.demoBtnPhone}>+998 90 999-88-77</Text>
+            </View>
+            <ArrowRight size={14} color="#8e8e93" />
           </TouchableOpacity>
         </View>
       </View>
@@ -224,7 +256,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   logoBadge: {
     width: 48,
@@ -233,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   logoText: {
     color: "#ffffff",
@@ -242,7 +274,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#111111",
     letterSpacing: -0.3,
   },
@@ -251,6 +283,7 @@ const styles = StyleSheet.create({
     color: "#8e8e93",
     marginTop: 4,
     textAlign: "center",
+    lineHeight: 16,
   },
   form: {
     gap: 12,
@@ -294,7 +327,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
+    marginTop: 4,
   },
   btnRow: {
     flexDirection: "row",
@@ -304,6 +337,15 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: "#ffffff",
     fontSize: 13,
+    fontWeight: "600",
+  },
+  guestBtn: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  guestBtnText: {
+    fontSize: 12,
+    color: "#2563eb",
     fontWeight: "600",
   },
   backBtn: {
@@ -322,7 +364,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   demoSection: {
-    marginTop: 24,
+    marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.06)",
@@ -353,5 +395,6 @@ const styles = StyleSheet.create({
   demoBtnPhone: {
     fontSize: 10,
     color: "#8e8e93",
+    marginTop: 1,
   },
 });

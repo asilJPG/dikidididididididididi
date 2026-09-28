@@ -27,12 +27,14 @@ interface ProfileScreenProps {
   salon: Salon | null;
   currentUser: User | null;
   onLogout: () => void;
+  onSwitchToClient: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   salon,
   currentUser,
   onLogout,
+  onSwitchToClient,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -155,6 +157,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             ))}
           </View>
         </View>
+
+        {/* Переключение в режим клиента */}
+        <TouchableOpacity
+          onPress={onSwitchToClient}
+          style={styles.clientSwitchBtn}
+        >
+          <Text style={styles.clientSwitchBtnText}>💇 Переключиться в режим клиента</Text>
+        </TouchableOpacity>
 
         {/* Кнопка выхода */}
         <TouchableOpacity onPress={onLogout} style={styles.logoutBtn}>
@@ -362,8 +372,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111111",
   },
+  clientSwitchBtn: {
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clientSwitchBtnText: {
+    color: "#111111",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   logoutBtn: {
-    marginTop: 8,
+    marginTop: 4,
     height: 48,
     borderRadius: 16,
     backgroundColor: "#fff1f2",
