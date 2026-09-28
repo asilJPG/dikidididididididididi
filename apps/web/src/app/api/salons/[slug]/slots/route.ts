@@ -41,7 +41,7 @@ export async function GET(
       return NextResponse.json({ error: "Салон не найден" }, { status: 404 });
     }
 
-    const service = salon.services.find((s) => s.id === serviceId);
+    const service = salon.services.find((s: any) => s.id === serviceId);
     if (!service) {
       return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
     }
@@ -51,12 +51,12 @@ export async function GET(
     const dayOfWeek = targetDate.getDay(); // 0-6
 
     // Мастера, способные оказать эту услугу
-    let eligibleStaff = salon.staff.filter((st) =>
-      st.staffServices.some((ss) => ss.serviceId === serviceId)
+    let eligibleStaff = salon.staff.filter((st: any) =>
+      st.staffServices?.some((ss: any) => ss.serviceId === serviceId)
     );
 
     if (staffId && staffId !== "any") {
-      eligibleStaff = eligibleStaff.filter((st) => st.id === staffId);
+      eligibleStaff = eligibleStaff.filter((st: any) => st.id === staffId);
     }
 
     if (eligibleStaff.length === 0) {
@@ -70,7 +70,7 @@ export async function GET(
     const existingAppointments = await prisma.appointment.findMany({
       where: {
         salonId: salon.id,
-        staffId: { in: eligibleStaff.map((s) => s.id) },
+        staffId: { in: eligibleStaff.map((s: any) => s.id) },
         startDateTime: { gte: startOfDay, lte: endOfDay },
         status: { notIn: ["CANCELLED"] },
       },
@@ -80,7 +80,7 @@ export async function GET(
     const availableSlotsMap = new Map<string, string[]>(); // time "11:00" -> staffIds[]
 
     for (const master of eligibleStaff) {
-      const schedule = master.schedules.find((s) => s.dayOfWeek === dayOfWeek);
+      const schedule = master.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek);
       if (!schedule || schedule.isDayOff) {
         continue;
       }
@@ -92,15 +92,15 @@ export async function GET(
       const workEndMinutes = endH * 60 + endM;
 
       // Массив перерывов
-      const breakIntervals = schedule.breaks.map((b) => {
+      const breakIntervals = (schedule.breaks || []).map((b: any) => {
         const [bh1, bm1] = b.startTime.split(":").map(Number);
         const [bh2, bm2] = b.endTime.split(":").map(Number);
         return { start: bh1 * 60 + bm1, end: bh2 * 60 + bm2 };
       });
 
       // Записи мастера по времени Ташкента
-      const masterAppts = existingAppointments.filter((a) => a.staffId === master.id);
-      const apptIntervals = masterAppts.map((a) => {
+      const masterAppts = existingAppointments.filter((a: any) => a.staffId === master.id);
+      const apptIntervals = masterAppts.map((a: any) => {
         return {
           start: getTashkentDayMinutes(a.startDateTime),
           end: getTashkentDayMinutes(a.endDateTime),
@@ -114,13 +114,13 @@ export async function GET(
 
         // Проверка на пересечение с перерывами
         const hasBreakConflict = breakIntervals.some(
-          (b) => slotStart < b.end && slotEnd > b.start
+          (b: any) => slotStart < b.end && slotEnd > b.start
         );
         if (hasBreakConflict) continue;
 
         // Проверка на пересечение с существующими записями
         const hasApptConflict = apptIntervals.some(
-          (a) => slotStart < a.end && slotEnd > a.start
+          (a: any) => slotStart < a.end && slotEnd > a.start
         );
         if (hasApptConflict) continue;
 

@@ -37,15 +37,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Салон не найден" }, { status: 404 });
     }
 
-    const service = salon.services.find((s) => s.id === serviceId);
+    const service = salon.services.find((s: any) => s.id === serviceId);
     if (!service) {
       return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
     }
 
     // Если staffId === 'any', берем первого подходящего мастера
-    let chosenStaff = salon.staff.find((st) => st.id === staffId);
+    let chosenStaff = salon.staff.find((st: any) => st.id === staffId);
     if (staffId === "any" || !chosenStaff) {
-      chosenStaff = salon.staff.find((st) => st.isActive) || salon.staff[0];
+      chosenStaff = salon.staff.find((st: any) => st.isActive) || salon.staff[0];
     }
 
     const chosenStaffId = chosenStaff.id;
