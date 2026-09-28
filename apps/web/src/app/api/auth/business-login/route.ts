@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     // Проверяем статус верификации
-    const verifiedSalon = user.ownedSalons?.find((s) => s.isVerified !== false);
+    const verifiedSalon = user.ownedSalons?.find((s: { isVerified: boolean }) => s.isVerified !== false);
     if (!verifiedSalon && !hasStaffProfile) {
       return NextResponse.json(
         { error: "Ваша заявка на подключение бизнеса еще находится на проверке. Ожидайте SMS с подтверждением." },
