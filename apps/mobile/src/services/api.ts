@@ -169,5 +169,58 @@ export const api = {
     });
     return res.json();
   },
+
+  // Управление услугами
+  createService: async (salonSlug: string, payload: { nameRu: string; price: number; durationMinutes: number }) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/${salonSlug}/services`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  updateService: async (payload: { id: string; nameRu?: string; price?: number; durationMinutes?: number }) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/current/services`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  deleteService: async (id: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/current/services?id=${id}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  },
+
+  // Управление мастерами
+  createStaff: async (salonSlug: string, payload: { fullName: string; specialty: string; phone?: string; commissionPercent?: number }) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/${salonSlug}/staff`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  updateStaff: async (payload: { id: string; fullName?: string; specialty?: string; phone?: string; commissionPercent?: number }) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/current/staff`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  deleteStaff: async (id: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/salons/current/staff?id=${id}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  },
 };
+
 

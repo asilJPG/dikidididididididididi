@@ -6,16 +6,21 @@ import {
   ScrollView,
   RefreshControl,
 } from "react-native";
-import { CreditCard, Banknote, TrendingUp, DollarSign } from "lucide-react-native";
-import { Salon, Appointment } from "../types";
+import { CreditCard, Banknote, TrendingUp, User as UserIcon } from "lucide-react-native";
+import { Salon, Appointment, User } from "../types";
 import { api } from "../services/api";
 import { formatUZS } from "../config";
 
 interface FinanceScreenProps {
   salon: Salon | null;
+  currentUser?: User | null;
 }
 
-export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon }) => {
+export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon, currentUser }) => {
+  const isMaster = !!currentUser?.staffProfile || currentUser?.role === "MASTER";
+  const masterStaffId = currentUser?.staffProfile?.id;
+  const masterPercent = currentUser?.staffProfile?.commissionPercent || 40;
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -30,7 +35,8 @@ export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon }) => {
   const loadData = async () => {
     if (!salon) return;
     try {
-      const data = await api.getAppointments(salon.id, todayStr);
+      const staffParam = isMaster && masterStaffId ? masterStaffId : "all";
+      const data = await api.getAppointments(salon.id, todayStr, staffParam);
       setAppointments(data);
     } catch (e) {
       console.error(e);
@@ -41,25 +47,28 @@ export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon }) => {
 
   useEffect(() => {
     loadData();
-  }, [salon]);
+  }, [salon, isMaster, masterStaffId]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
-  const totalRevenue = appointments
-    .filter((a) => a.status === "COMPLETED" || a.paymentStatus === "PAID")
-    .reduce((sum, a) => sum + a.price, 0);
+  const completedAppts = appointments.filter(
+    (a) => a.status === "COMPLETED" || a.paymentStatus === "PAID"
+  );
 
-  const clickPaymeRevenue = appointments
+  const totalRevenue = completedAppts.reduce((sum, a) => sum + a.price, 0);
+
+  const clickPaymeRevenue = completedAppts
     .filter((a) => a.paymentMethod === "CLICK" || a.paymentMethod === "PAYME")
     .reduce((sum, a) => sum + a.price, 0);
 
-  const cashRevenue = appointments
+  const cashRevenue = completedAppts
     .filter((a) => a.paymentMethod === "CASH")
     .reduce((sum, a) => sum + a.price, 0);
 
+  const myEarnings = Math.round(totalRevenue * (masterPercent / 100));
   const payrollEstimate = Math.round(totalRevenue * 0.45);
 
   return (
@@ -68,16 +77,30 @@ export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon }) => {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#111111" />}
     >
       <View style={styles.topBar}>
-        <Text style={styles.title}>Касса и финансы</Text>
-        <Text style={styles.subtitle}>Сводка за сегодня</Text>
+        <Text style={styles.title}>
+          {isMaster ? "Мой доход и касса" : "Касса и финансы"}
+        </Text>
+        <Text style={styles.subtitle}>
+          {isMaster
+            ? `Мастер: ${currentUser?.staffProfile?.fullName || currentUser?.fullName} (${masterPercent}%)`
+            : `Сводка за сегодня · ${salon?.name || "Точка"}`}
+        </Text>
       </View>
 
       <View style={styles.content}>
         {/* Главная карточка выручки */}
         <View style={styles.mainCard}>
-          <Text style={styles.mainLabel}>ВЫРУЧКА ЗА СЕГОДНЯ</Text>
-          <Text style={styles.mainAmount}>{formatUZS(totalRevenue)}</Text>
-          <Text style={styles.mainSub}>Всего визитов: {appointments.length}</Text>
+          <Text style={styles.mainLabel}>
+            {isMaster ? "МОЙ ЗАРАБОТОК ЗА СЕГОДНЯ" : "ВЫРУЧКА ТОЧКИ ЗА СЕГОДНЯ"}
+          </Text>
+          <Text style={styles.mainAmount}>
+            {formatUZS(isMaster ? myEarnings : totalRevenue)}
+          </Text>
+          <Text style={styles.mainSub}>
+            {isMaster
+              ? `Выполнено записей: ${completedAppts.length} (из ${appointments.length})`
+              : `Всего визитов сегодня: ${appointments.length}`}
+          </Text>
         </View>
 
         {/* Разделение оплат */}
@@ -104,23 +127,29 @@ export const FinanceScreen: React.FC<FinanceScreenProps> = ({ salon }) => {
               </View>
               <View>
                 <Text style={styles.paymentName}>Наличные (Naqd)</Text>
-                <Text style={styles.paymentSub}>Оплата в кассу</Text>
+                <Text style={styles.paymentSub}>Оплата клиентом</Text>
               </View>
             </View>
             <Text style={styles.paymentAmount}>{formatUZS(cashRevenue)}</Text>
           </View>
         </View>
 
-        {/* Зарплатный фонд */}
+        {/* Зарплатный фонд (для владельца) или детальная ставка (для мастера) */}
         <View style={styles.card}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <TrendingUp size={16} color="#111111" />
-            <Text style={styles.cardTitle}>Зарплаты мастеров</Text>
+            <Text style={styles.cardTitle}>
+              {isMaster ? "Условия начисления" : "Зарплатный фонд мастеров"}
+            </Text>
           </View>
 
-          <Text style={styles.payrollAmount}>{formatUZS(payrollEstimate)}</Text>
+          <Text style={styles.payrollAmount}>
+            {formatUZS(isMaster ? myEarnings : payrollEstimate)}
+          </Text>
           <Text style={styles.payrollSub}>
-            Ориентировочный расчет по ставке мастеров (~45% от чека)
+            {isMaster
+              ? `Ваша ставка составляет ${masterPercent}% от чека за каждую выполненную услугу.`
+              : `Ориентировочный расчет по ставке мастеров (~45% от чека салона).`}
           </Text>
         </View>
       </View>
@@ -154,33 +183,34 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     gap: 12,
+    paddingBottom: 40,
   },
   mainCard: {
     backgroundColor: "#111111",
-    borderRadius: 24,
+    borderRadius: 22,
     padding: 22,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   mainLabel: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#8e8e93",
+    color: "rgba(255,255,255,0.6)",
     letterSpacing: 0.8,
   },
   mainAmount: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#ffffff",
     marginTop: 6,
     letterSpacing: -0.5,
   },
   mainSub: {
     fontSize: 11,
-    color: "#8e8e93",
+    color: "rgba(255,255,255,0.7)",
     marginTop: 4,
   },
   card: {
@@ -198,8 +228,8 @@ const styles = StyleSheet.create({
   },
   paymentRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.04)",
@@ -210,8 +240,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconBox: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -224,7 +254,6 @@ const styles = StyleSheet.create({
   paymentSub: {
     fontSize: 10,
     color: "#8e8e93",
-    marginTop: 1,
   },
   paymentAmount: {
     fontSize: 13,
@@ -233,8 +262,9 @@ const styles = StyleSheet.create({
   },
   payrollAmount: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#111111",
+    fontWeight: "800",
+    color: "#059669",
+    marginTop: 2,
   },
   payrollSub: {
     fontSize: 11,

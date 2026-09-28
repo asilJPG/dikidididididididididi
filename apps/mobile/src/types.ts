@@ -88,6 +88,7 @@ export interface User {
   phone: string;
   role: string;
   ownedSalons?: Salon[];
+  staffProfile?: Staff & { salon?: Salon };
 }
 
 export type AppMode = "client" | "business";

@@ -186,15 +186,20 @@ export default function App() {
         {/* РЕЖИМ БИЗНЕСА (ТОЛЬКО ДЛЯ ВЕРИФИЦИРОВАННЫХ САЛОНОВ И МАСТЕРОВ) */}
         {mode === "business" && (
           <>
-            {activeBusinessTab === "journal" && <JournalScreen salon={currentSalon} />}
+            {activeBusinessTab === "journal" && (
+              <JournalScreen salon={currentSalon} currentUser={currentUser} />
+            )}
             {activeBusinessTab === "clients" && <ClientsScreen salon={currentSalon} />}
-            {activeBusinessTab === "finance" && <FinanceScreen salon={currentSalon} />}
+            {activeBusinessTab === "finance" && (
+              <FinanceScreen salon={currentSalon} currentUser={currentUser} />
+            )}
             {activeBusinessTab === "salon" && (
               <ProfileScreen
                 salon={currentSalon}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onSwitchToClient={() => setMode("client")}
+                onReloadSalon={() => loadSalonData(currentUser || undefined)}
               />
             )}
           </>

@@ -15,19 +15,23 @@ import {
   Star,
   ExternalLink,
   Share2,
-  Copy,
   LogOut,
   Send,
-  Scissors,
+  Plus,
+  Edit2,
+  ChevronRight,
 } from "lucide-react-native";
-import { Salon, User } from "../types";
+import { Salon, User, Service, Staff } from "../types";
 import { API_BASE_URL, formatUZS } from "../config";
+import { ManageServiceModal } from "../components/ManageServiceModal";
+import { ManageStaffModal } from "../components/ManageStaffModal";
 
 interface ProfileScreenProps {
   salon: Salon | null;
   currentUser: User | null;
   onLogout: () => void;
   onSwitchToClient: () => void;
+  onReloadSalon?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -35,10 +39,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   currentUser,
   onLogout,
   onSwitchToClient,
+  onReloadSalon,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [serviceModalVisible, setServiceModalVisible] = useState(false);
+  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
+
+  const [staffModalVisible, setStaffModalVisible] = useState(false);
+  const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
 
   if (!salon) return null;
+
+  const isOwner =
+    currentUser?.role === "OWNER" ||
+    currentUser?.role === "SALON_OWNER" ||
+    (currentUser?.ownedSalons && currentUser.ownedSalons.length > 0) ||
+    !currentUser?.staffProfile;
 
   const bookingUrl = `${API_BASE_URL}/b/${salon.slug}`;
 
@@ -56,14 +71,38 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     Linking.openURL(bookingUrl);
   };
 
+  const handleOpenAddService = () => {
+    setServiceToEdit(null);
+    setServiceModalVisible(true);
+  };
+
+  const handleOpenEditService = (srv: Service) => {
+    if (!isOwner) return;
+    setServiceToEdit(srv);
+    setServiceModalVisible(true);
+  };
+
+  const handleOpenAddStaff = () => {
+    setStaffToEdit(null);
+    setStaffModalVisible(true);
+  };
+
+  const handleOpenEditStaff = (st: Staff) => {
+    if (!isOwner) return;
+    setStaffToEdit(st);
+    setStaffModalVisible(true);
+  };
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.topBar}>
         <Text style={styles.title}>Мой салон</Text>
-        <Text style={styles.subtitle}>Профиль и онлайн-запись</Text>
+        <Text style={styles.subtitle}>
+          {isOwner ? "Управление салоном, прайсом и мастерами" : `Мастер салона: ${currentUser?.fullName}`}
+        </Text>
       </View>
 
-      <View style={styles.content}>
+      <View style={styles.body}>
         {/* Карточка салона */}
         <View style={styles.salonCard}>
           <View style={styles.salonHeader}>
@@ -109,24 +148,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         </View>
 
-        {/* Интеграция с Telegram */}
-        <View style={styles.card}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <Send size={16} color="#229ED9" />
-            <Text style={styles.cardTitle}>Telegram Mini App</Text>
-          </View>
-          <Text style={styles.cardSub}>
-            Клиенты могут записываться прямо в Telegram без скачивания приложений.
-            Бесплатные уведомления и напоминания отправляются автоматически через бота.
-          </Text>
-        </View>
-
         {/* Мастера салона */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Мастера ({salon.staff.length})</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.cardTitle}>Мастера ({salon.staff.length})</Text>
+            {isOwner && (
+              <TouchableOpacity onPress={handleOpenAddStaff} style={styles.addMiniBtn}>
+                <Plus size={13} color="#111111" />
+                <Text style={styles.addMiniBtnText}>Добавить</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.staffList}>
             {salon.staff.map((st) => (
-              <View key={st.id} style={styles.staffItem}>
+              <TouchableOpacity
+                key={st.id}
+                style={styles.staffItem}
+                onPress={() => handleOpenEditStaff(st)}
+                disabled={!isOwner}
+                activeOpacity={0.7}
+              >
                 <View style={styles.staffAvatar}>
                   <Text style={styles.staffAvatarText}>
                     {st.fullName.slice(0, 2).toUpperCase()}
@@ -136,24 +177,44 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   <Text style={styles.staffName}>{st.fullName}</Text>
                   <Text style={styles.staffRole}>{st.specialty}</Text>
                 </View>
-                <Text style={styles.staffPercent}>{st.commissionPercent}%</Text>
-              </View>
+                <View style={{ alignItems: "flex-end", gap: 2 }}>
+                  <Text style={styles.staffPercent}>{st.commissionPercent}%</Text>
+                  {isOwner && <Text style={styles.editHint}>Редакт.</Text>}
+                </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Услуги */}
+        {/* Прайс-лист и услуги */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Прайс-лист ({salon.services.length})</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.cardTitle}>Прайс-лист ({salon.services.length})</Text>
+            {isOwner && (
+              <TouchableOpacity onPress={handleOpenAddService} style={styles.addMiniBtn}>
+                <Plus size={13} color="#111111" />
+                <Text style={styles.addMiniBtnText}>Добавить</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.serviceList}>
             {salon.services.map((srv) => (
-              <View key={srv.id} style={styles.serviceItem}>
+              <TouchableOpacity
+                key={srv.id}
+                style={styles.serviceItem}
+                onPress={() => handleOpenEditService(srv)}
+                disabled={!isOwner}
+                activeOpacity={0.7}
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.srvName}>{srv.nameRu}</Text>
                   <Text style={styles.srvDuration}>{srv.durationMinutes} мин</Text>
                 </View>
-                <Text style={styles.srvPrice}>{formatUZS(srv.price)}</Text>
-              </View>
+                <View style={{ alignItems: "flex-end", gap: 2 }}>
+                  <Text style={styles.srvPrice}>{formatUZS(srv.price)}</Text>
+                  {isOwner && <Text style={styles.editHint}>Редакт.</Text>}
+                </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -172,6 +233,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Text style={styles.logoutBtnText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Модалки управления */}
+      <ManageServiceModal
+        visible={serviceModalVisible}
+        salonSlug={salon.slug}
+        serviceToEdit={serviceToEdit}
+        onClose={() => setServiceModalVisible(false)}
+        onSuccess={() => onReloadSalon?.()}
+      />
+
+      <ManageStaffModal
+        visible={staffModalVisible}
+        salonSlug={salon.slug}
+        staffToEdit={staffToEdit}
+        onClose={() => setStaffModalVisible(false)}
+        onSuccess={() => onReloadSalon?.()}
+      />
     </ScrollView>
   );
 };
@@ -180,6 +258,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f7",
+  },
+  content: {
+    paddingBottom: 40,
   },
   topBar: {
     backgroundColor: "#ffffff",
@@ -199,10 +280,9 @@ const styles = StyleSheet.create({
     color: "#8e8e93",
     marginTop: 2,
   },
-  content: {
+  body: {
     padding: 16,
     gap: 12,
-    paddingBottom: 40,
   },
   salonCard: {
     backgroundColor: "#ffffff",
@@ -255,12 +335,34 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 20,
-    padding: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   cardTitle: {
     fontSize: 14,
+    fontWeight: "700",
+    color: "#111111",
+  },
+  addMiniBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f5f5f7",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+  },
+  addMiniBtnText: {
+    fontSize: 11,
     fontWeight: "700",
     color: "#111111",
   },
@@ -311,18 +413,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   staffList: {
-    marginTop: 10,
-    gap: 8,
+    marginTop: 4,
+    gap: 6,
   },
   staffItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.03)",
   },
   staffAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: "#f5f5f7",
     alignItems: "center",
     justifyContent: "center",
@@ -333,7 +437,7 @@ const styles = StyleSheet.create({
     color: "#111111",
   },
   staffName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: "#111111",
   },
@@ -342,25 +446,29 @@ const styles = StyleSheet.create({
     color: "#8e8e93",
   },
   staffPercent: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     color: "#059669",
   },
+  editHint: {
+    fontSize: 9,
+    color: "#8e8e93",
+  },
   serviceList: {
-    marginTop: 10,
-    gap: 8,
+    marginTop: 4,
+    gap: 6,
   },
   serviceItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.03)",
   },
   srvName: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
     color: "#111111",
   },
   srvDuration: {
@@ -380,6 +488,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.1)",
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 6,
   },
   clientSwitchBtnText: {
     color: "#111111",

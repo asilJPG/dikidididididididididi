@@ -9,18 +9,23 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Plus, Calendar as CalendarIcon, Clock, ChevronRight } from "lucide-react-native";
-import { Salon, Appointment } from "../types";
+import { Salon, Appointment, User } from "../types";
 import { api } from "../services/api";
 import { formatUZS, formatPhoneUZ } from "../config";
 import { StatusBadge } from "../components/StatusBadge";
 import { AppointmentDetailsModal } from "../components/AppointmentDetailsModal";
 import { AddAppointmentModal } from "../components/AddAppointmentModal";
+import { User as UserIcon } from "lucide-react-native";
 
 interface JournalScreenProps {
   salon: Salon | null;
+  currentUser?: User | null;
 }
 
-export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
+export const JournalScreen: React.FC<JournalScreenProps> = ({ salon, currentUser }) => {
+  const isMaster = !!currentUser?.staffProfile || currentUser?.role === "MASTER";
+  const masterStaffId = currentUser?.staffProfile?.id;
+
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -29,7 +34,9 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
     return `${yyyy}-${mm}-${dd}`;
   });
 
-  const [filterStaff, setFilterStaff] = useState<string>("all");
+  const [filterStaff, setFilterStaff] = useState<string>(
+    isMaster && masterStaffId ? masterStaffId : "all"
+  );
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +69,8 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
   const loadAppointments = async () => {
     if (!salon) return;
     try {
-      const data = await api.getAppointments(salon.id, selectedDate, filterStaff);
+      const targetStaff = isMaster && masterStaffId ? masterStaffId : filterStaff;
+      const data = await api.getAppointments(salon.id, selectedDate, targetStaff);
       setAppointments(data);
     } catch (e) {
       console.error(e);
@@ -74,7 +82,7 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
 
   useEffect(() => {
     loadAppointments();
-  }, [salon, selectedDate, filterStaff]);
+  }, [salon, selectedDate, filterStaff, isMaster, masterStaffId]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -100,13 +108,18 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
     .filter((a) => a.status === "COMPLETED" || a.paymentStatus === "PAID")
     .reduce((sum, a) => sum + a.price, 0);
 
+  const masterPercent = currentUser?.staffProfile?.commissionPercent || 40;
+  const masterEarnings = Math.round(totalRevenue * (masterPercent / 100));
+
   return (
     <View style={styles.container}>
       {/* Верхний заголовок экрана */}
       <View style={styles.topBar}>
         <View>
           <Text style={styles.salonName}>{salon?.name || "Мой салон"}</Text>
-          <Text style={styles.dateLabel}>Журнал расписания</Text>
+          <Text style={styles.dateLabel}>
+            {isMaster ? "Личный журнал мастера" : "Журнал расписания всех мастеров"}
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -141,46 +154,69 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({ salon }) => {
         })}
       </View>
 
-      {/* Фильтр по мастерам */}
-      {salon?.staff && salon.staff.length > 1 && (
-        <View style={styles.masterFilter}>
-          <TouchableOpacity
-            onPress={() => setFilterStaff("all")}
-            style={[styles.filterPill, filterStaff === "all" && styles.filterPillActive]}
-          >
-            <Text
-              style={[
-                styles.filterPillText,
-                filterStaff === "all" && styles.filterPillTextActive,
-              ]}
-            >
-              Все мастера
-            </Text>
-          </TouchableOpacity>
-          {salon.staff.map((m) => (
+      {/* Фильтр по мастерам: мастер видит только себя, владелец видит всех */}
+      {isMaster && currentUser?.staffProfile ? (
+        <View style={styles.masterBadgeBox}>
+          <UserIcon size={13} color="#111111" />
+          <Text style={styles.masterBadgeText}>
+            Мастер: {currentUser.staffProfile.fullName} ({currentUser.staffProfile.specialty})
+          </Text>
+        </View>
+      ) : (
+        salon?.staff && salon.staff.length > 1 && (
+          <View style={styles.masterFilter}>
             <TouchableOpacity
-              key={m.id}
-              onPress={() => setFilterStaff(m.id)}
-              style={[styles.filterPill, filterStaff === m.id && styles.filterPillActive]}
+              onPress={() => setFilterStaff("all")}
+              style={[styles.filterPill, filterStaff === "all" && styles.filterPillActive]}
             >
               <Text
                 style={[
                   styles.filterPillText,
-                  filterStaff === m.id && styles.filterPillTextActive,
+                  filterStaff === "all" && styles.filterPillTextActive,
                 ]}
               >
-                {m.fullName.split(" ")[0]}
+                Все мастера
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+            {salon.staff.map((m) => (
+              <TouchableOpacity
+                key={m.id}
+                onPress={() => setFilterStaff(m.id)}
+                style={[styles.filterPill, filterStaff === m.id && styles.filterPillActive]}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    filterStaff === m.id && styles.filterPillTextActive,
+                  ]}
+                >
+                  {m.fullName.split(" ")[0]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )
       )}
 
       {/* Сводка за день */}
       <View style={styles.summaryBar}>
         <Text style={styles.summaryCount}>Записей: {appointments.length}</Text>
         <Text style={styles.summaryRevenue}>
-          Выручка: <Text style={{ fontWeight: "700", color: "#111111" }}>{formatUZS(totalRevenue)}</Text>
+          {isMaster ? (
+            <>
+              Мой заработок:{" "}
+              <Text style={{ fontWeight: "700", color: "#059669" }}>
+                {formatUZS(masterEarnings)}
+              </Text>
+            </>
+          ) : (
+            <>
+              Выручка:{" "}
+              <Text style={{ fontWeight: "700", color: "#111111" }}>
+                {formatUZS(totalRevenue)}
+              </Text>
+            </>
+          )}
         </Text>
       </View>
 
@@ -354,6 +390,24 @@ const styles = StyleSheet.create({
   },
   dateChipNumActive: {
     color: "#ffffff",
+  },
+  masterBadgeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  masterBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#111111",
   },
   masterFilter: {
     flexDirection: "row",
