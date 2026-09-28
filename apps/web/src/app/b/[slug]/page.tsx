@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ArrowRight,
   Send,
+  CalendarPlus,
 } from "lucide-react";
 import { formatUZS, formatPhoneUZ } from "@/lib/utils";
 
@@ -223,6 +224,40 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
     }
   };
 
+  const downloadIcs = () => {
+    if (!confirmedAppointment || !salon) return;
+    const start = new Date(confirmedAppointment.startDateTime)
+      .toISOString()
+      .replace(/-|:|\.\d\d\d/g, "");
+    const end = new Date(confirmedAppointment.endDateTime)
+      .toISOString()
+      .replace(/-|:|\.\d\d\d/g, "");
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DIKIDI UZ//Online Booking//RU
+BEGIN:VEVENT
+UID:${confirmedAppointment.id}@dikidi.uz
+DTSTAMP:${start}
+DTSTART:${start}
+DTEND:${end}
+SUMMARY:${confirmedAppointment.service.nameRu} - ${salon.name}
+DESCRIPTION:Запись в ${salon.name}. Мастер: ${confirmedAppointment.staff.fullName}. Стоимость: ${confirmedAppointment.price} UZS
+LOCATION:${salon.address}, ${salon.city}
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `booking-${confirmedAppointment.id.slice(0, 8)}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
@@ -268,9 +303,17 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 <span className="truncate">{salon.address}</span>
               </p>
             </div>
-            <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-50 border border-neutral-200/70 text-xs font-medium text-neutral-700">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span>{salon.rating.toFixed(1)}</span>
+            <div className="shrink-0 flex items-center gap-2">
+              <Link
+                href="/my-bookings"
+                className="px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[11px] font-semibold transition-colors"
+              >
+                Мои записи
+              </Link>
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-50 border border-neutral-200/70 text-xs font-medium text-neutral-700">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>{salon.rating.toFixed(1)}</span>
+              </div>
             </div>
           </div>
 
@@ -702,18 +745,33 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 <div className="pt-2 flex flex-col gap-2">
                   <button
                     type="button"
+                    onClick={downloadIcs}
+                    className="w-full h-11 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <CalendarPlus className="w-4 h-4" /> Добавить в календарь (.ics)
+                  </button>
+
+                  <Link
+                    href="/my-bookings"
+                    className="w-full h-10 flex items-center justify-center rounded-full border border-neutral-300 text-neutral-800 text-xs font-semibold hover:border-neutral-900 transition-colors"
+                  >
+                    Посмотреть мои записи
+                  </Link>
+
+                  <button
+                    type="button"
                     onClick={() => {
                       setStep(1);
                       setSelectedService(null);
                       setSelectedTime("");
                     }}
-                    className="w-full h-11 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors"
+                    className="w-full h-10 rounded-full text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
                   >
                     Записаться на другую услугу
                   </button>
                   <Link
                     href="/"
-                    className="w-full h-10 flex items-center justify-center rounded-full text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+                    className="w-full h-8 flex items-center justify-center text-xs font-medium text-neutral-400 hover:text-neutral-700 transition-colors"
                   >
                     Вернуться к поиску заведений
                   </Link>

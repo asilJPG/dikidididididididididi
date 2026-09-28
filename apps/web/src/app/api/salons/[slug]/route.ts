@@ -54,3 +54,35 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const { slug } = params;
+    const body = await request.json();
+    const { name, phone, city, address, landmark, description } = body;
+
+    const updated = await prisma.salon.update({
+      where: { slug },
+      data: {
+        ...(name ? { name } : {}),
+        ...(phone ? { phone } : {}),
+        ...(city ? { city } : {}),
+        ...(address ? { address } : {}),
+        ...(landmark !== undefined ? { landmark } : {}),
+        ...(description !== undefined ? { description } : {}),
+      },
+    });
+
+    return NextResponse.json({ success: true, salon: updated });
+  } catch (error) {
+    console.error("Error updating salon:", error);
+    return NextResponse.json(
+      { error: "Не удалось обновить настройки заведения" },
+      { status: 500 }
+    );
+  }
+}
+

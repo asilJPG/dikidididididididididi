@@ -92,9 +92,20 @@ export default function LoginPage() {
       // Сохраняем пользователя в localStorage
       if (data.user) {
         localStorage.setItem("dikidi_user", JSON.stringify(data.user));
-      }
+        if (data.user.phone) {
+          localStorage.setItem("dikidi_user_phone", data.user.phone);
+        }
 
-      router.push("/dashboard");
+        if (data.user.role === "MASTER" || data.user.staffProfile) {
+          router.push("/staff");
+        } else if (data.user.role === "CLIENT") {
+          router.push("/my-bookings");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setErrorMsg("Ошибка при проверке кода");
     } finally {

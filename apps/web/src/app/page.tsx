@@ -37,15 +37,27 @@ export default async function HomePage() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-4 text-xs font-medium text-neutral-600">
-            <span className="flex items-center gap-1 text-neutral-800">
+          <div className="flex items-center gap-3 text-xs font-medium text-neutral-600">
+            <span className="hidden sm:flex items-center gap-1 text-neutral-800">
               <MapPin className="w-3.5 h-3.5 text-neutral-400" /> Ташкент
             </span>
             <Link
-              href="/business"
-              className="px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white text-neutral-800 transition-all font-semibold"
+              href="/my-bookings"
+              className="px-3 py-1 rounded-full text-neutral-700 hover:text-neutral-950 hover:bg-black/[0.05] transition-all font-medium"
             >
-              Для бизнеса
+              Мои записи
+            </Link>
+            <Link
+              href="/staff"
+              className="hidden sm:inline-block px-3 py-1 rounded-full text-neutral-700 hover:text-neutral-950 hover:bg-black/[0.05] transition-all font-medium"
+            >
+              Мастерам
+            </Link>
+            <Link
+              href="/dashboard"
+              className="px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white text-neutral-900 transition-all font-semibold"
+            >
+              CRM Салона
             </Link>
           </div>
         </div>
