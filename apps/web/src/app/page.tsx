@@ -37,15 +37,15 @@ export default async function HomePage() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-5 text-xs font-medium text-neutral-600">
+          <div className="flex items-center gap-4 text-xs font-medium text-neutral-600">
             <span className="flex items-center gap-1 text-neutral-800">
               <MapPin className="w-3.5 h-3.5 text-neutral-400" /> Ташкент
             </span>
             <Link
-              href="/login"
-              className="text-neutral-500 hover:text-neutral-900 transition-colors"
+              href="/business"
+              className="px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white text-neutral-800 transition-all font-semibold"
             >
-              Партнерам
+              Для бизнеса
             </Link>
           </div>
         </div>
@@ -55,21 +55,21 @@ export default async function HomePage() {
         {/* Интерактивный клиентский маркетплейс */}
         <MarketplaceClient initialSalons={salons as any} />
 
-        {/* Блок для владельцев бизнеса (Аккуратный, внизу страницы) */}
+        {/* Блок для владельцев бизнеса */}
         <section className="bg-white rounded-3xl p-8 border border-black/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <div className="space-y-1.5 max-w-lg">
             <h3 className="text-base font-semibold text-neutral-900">
               Вы мастер или владелец заведения?
             </h3>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              Подключите онлайн-запись через Telegram Mini App, ведите базу постоянных клиентов и управляйте расписанием в единой системе.
+              Подключите онлайн-запись через Telegram Mini App, ведите базу постоянных клиентов и управляйте расписанием в единой системе DIKIDI Business.
             </p>
           </div>
           <Link
-            href="/login"
+            href="/business"
             className="h-10 px-5 rounded-full border border-neutral-300 text-neutral-800 hover:border-neutral-900 text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0"
           >
-            Подключить заведение <ChevronRight className="w-3.5 h-3.5" />
+            Подробнее о DIKIDI Business <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </section>
       </main>
@@ -79,8 +79,12 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 DIKIDI UZ. Платформа онлайн-записи и автоматизации бизнеса в Узбекистане.</p>
           <div className="flex items-center gap-4 text-neutral-500">
+            <Link href="/business" className="hover:text-neutral-900 transition-colors">
+              DIKIDI Business
+            </Link>
+            <span>·</span>
             <Link href="/login" className="hover:text-neutral-900 transition-colors">
-              Вход для партнеров
+              Вход в CRM
             </Link>
             <span>·</span>
             <span>Ташкент, Самарканд, Бухара</span>
