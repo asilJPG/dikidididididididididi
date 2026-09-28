@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma, BookingStatus, BookingSource, PaymentStatus } from "@dikidi/database";
+import { sendTelegramBookingNotice } from "@/lib/telegram";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
       clientName,
       clientPhone,
       clientComment,
+      telegramId,
+      telegramChatId,
+      telegramUsername,
       source = BookingSource.ONLINE_WIDGET,
     } = body;
 
@@ -38,19 +42,15 @@ export async function POST(request: Request) {
     }
 
     // Если staffId === 'any', берем первого подходящего мастера
-    let chosenStaffId = staffId;
-    if (chosenStaffId === "any") {
-      const eligible = salon.staff.find((st) => st.isActive);
-      if (!eligible) {
-        return NextResponse.json({ error: "Нет доступных мастеров" }, { status: 400 });
-      }
-      chosenStaffId = eligible.id;
+    let chosenStaff = salon.staff.find((st) => st.id === staffId);
+    if (staffId === "any" || !chosenStaff) {
+      chosenStaff = salon.staff.find((st) => st.isActive) || salon.staff[0];
     }
 
+    const chosenStaffId = chosenStaff.id;
+
     // Рассчитываем точное время начала и окончания
-    const [h, m] = time.split(":").map(Number);
     const startDateTime = new Date(`${date}T${time}:00.000Z`);
-    // adjust for local time if necessary or UTC
     const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60 * 1000);
 
     // Проверяем на конфликт (Overbooking prevention)
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Находим или создаем клиента в CRM салона
+    // Находим или создаем клиента в CRM салона, сохраняя Telegram данные
     let customer = await prisma.customer.findUnique({
       where: {
         salonId_phone: {
@@ -98,6 +98,9 @@ export async function POST(request: Request) {
           salonId: salon.id,
           phone: clientPhone,
           fullName: clientName,
+          telegramId: telegramId ? String(telegramId) : null,
+          telegramChatId: telegramChatId ? String(telegramChatId) : null,
+          telegramUsername: telegramUsername || null,
           totalVisits: 1,
           totalSpent: service.price,
         },
@@ -108,6 +111,9 @@ export async function POST(request: Request) {
         data: {
           totalVisits: customer.totalVisits + 1,
           totalSpent: customer.totalSpent + service.price,
+          ...(telegramId ? { telegramId: String(telegramId) } : {}),
+          ...(telegramChatId ? { telegramChatId: String(telegramChatId) } : {}),
+          ...(telegramUsername ? { telegramUsername } : {}),
         },
       });
     }
@@ -122,7 +128,7 @@ export async function POST(request: Request) {
         startDateTime,
         endDateTime,
         status: BookingStatus.PENDING,
-        source,
+        source: telegramChatId ? BookingSource.TELEGRAM_BOT : source,
         price: service.price,
         paymentStatus: PaymentStatus.UNPAID,
         clientName,
@@ -135,6 +141,19 @@ export async function POST(request: Request) {
         salon: true,
       },
     });
+
+    // Если есть Telegram Chat ID — отправляем уведомление прямо в Telegram
+    const targetChatId = telegramChatId || customer.telegramChatId;
+    if (targetChatId) {
+      sendTelegramBookingNotice(targetChatId, {
+        salonName: salon.name,
+        serviceName: service.nameRu,
+        masterName: chosenStaff.fullName,
+        dateTime: `${date} в ${time}`,
+        price: service.price,
+        address: salon.address,
+      }).catch((e) => console.error("Telegram notify failed:", e));
+    }
 
     return NextResponse.json({
       success: true,

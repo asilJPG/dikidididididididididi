@@ -73,6 +73,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // Telegram данные
+  const [isInsideTelegram, setIsInsideTelegram] = useState(false);
+  const [tgUser, setTgUser] = useState<any>(null);
+
   // Контакты клиента
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("+998 ");
@@ -80,6 +84,23 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   const [submitting, setSubmitting] = useState(false);
   const [confirmedAppointment, setConfirmedAppointment] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Инициализация Telegram WebApp
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      setIsInsideTelegram(true);
+
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        setTgUser(user);
+        const name = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+        if (name) setClientName(name);
+      }
+    }
+  }, []);
 
   // Загрузка данных салона
   useEffect(() => {
@@ -197,6 +218,9 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
           clientName,
           clientPhone,
           clientComment,
+          telegramId: tgUser?.id ? String(tgUser.id) : undefined,
+          telegramChatId: tgUser?.id ? String(tgUser.id) : undefined,
+          telegramUsername: tgUser?.username || undefined,
         }),
       });
 
@@ -252,7 +276,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
-                <Sparkles className="w-3 h-3" /> Онлайн-запись
+                <Sparkles className="w-3 h-3" /> Онлайн-запись {isInsideTelegram && "• Telegram"}
               </span>
               <h1 className="text-xl font-bold tracking-tight">{salon.name}</h1>
               <p className="text-xs text-slate-300 flex items-center gap-1">
@@ -657,15 +681,15 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
                 </div>
               </div>
 
-              {/* Кнопка перехода в Telegram */}
+              {/* Уведомление о Telegram */}
               <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl flex items-center gap-3 text-left">
                 <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">
                   <Send className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-sky-950">Telegram-напоминание</p>
+                  <p className="text-xs font-bold text-sky-950">Telegram-уведомление отправлено</p>
                   <p className="text-[11px] text-sky-700">
-                    Получите мгновенное напоминание перед визитом в Telegram
+                    Детали записи и напоминание продублированы вам в Telegram-чат
                   </p>
                 </div>
               </div>

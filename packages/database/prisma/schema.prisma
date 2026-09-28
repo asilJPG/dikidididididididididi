@@ -11,20 +11,26 @@ datasource db {
 
 // 1. Пользователь системы (для входа в CRM или личный кабинет клиента)
 model User {
-  id           String      @id @default(uuid())
-  phone        String      @unique // Номер телефона в формате +998XXXXXXXXX
-  fullName     String
-  email        String?
-  role         String      @default("MASTER") // OWNER, ADMIN, MASTER, CLIENT
-  avatarUrl    String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  phone            String      @unique // Номер телефона в формате +998XXXXXXXXX
+  fullName         String
+  email            String?
+  role             String      @default("MASTER") // OWNER, ADMIN, MASTER, CLIENT
+  avatarUrl        String?
+  
+  // Telegram связка
+  telegramId       String?     @unique
+  telegramChatId   String?
+  telegramUsername String?
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   // Связи
-  ownedSalons  Salon[]     @relation("SalonOwner")
-  staffProfile Staff?
-  appointments Appointment[] @relation("ClientAppointments")
-  reviews      Review[]
+  ownedSalons      Salon[]     @relation("SalonOwner")
+  staffProfile     Staff?
+  appointments     Appointment[] @relation("ClientAppointments")
+  reviews          Review[]
 
   @@map("users")
 }
@@ -171,36 +177,42 @@ model Break {
 
 // 7. База клиентов салона (CRM)
 model Customer {
-  id              String        @id @default(uuid())
-  salonId         String
-  phone           String        // +998...
-  fullName        String
-  notes           String?       // Заметки: "Аллергия на краситель, любит зеленый чай"
-  totalVisits     Int           @default(0)
-  totalSpent      Int           @default(0) // Сумма в UZS
-  discountPercent Int           @default(0) // Персональная скидка
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id               String        @id @default(uuid())
+  salonId          String
+  phone            String        // +998...
+  fullName         String
+  notes            String?       // Заметки: "Аллергия на краситель, любит зеленый чай"
+  totalVisits      Int           @default(0)
+  totalSpent       Int           @default(0) // Сумма в UZS
+  discountPercent  Int           @default(0) // Персональная скидка
 
-  salon           Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
-  appointments    Appointment[]
+  // Telegram данные клиента
+  telegramId       String?
+  telegramChatId   String?
+  telegramUsername String?
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  salon            Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  appointments     Appointment[]
 
   @@unique([salonId, phone])
   @@map("customers")
 }
 
-// 8. Запись (Бронирование) — Сердце системы!
+// 8. Запись (Бронирование)
 model Appointment {
   id            String        @id @default(uuid())
   salonId       String
   staffId       String
   serviceId     String
   customerId    String?
-  clientUserId  String?       // Если клиент зарегистрирован в приложении
+  clientUserId  String?
 
   // Дата и время
-  startDateTime DateTime      // Точное время начала записи
-  endDateTime   DateTime      // Точное время завершения записи
+  startDateTime DateTime
+  endDateTime   DateTime
 
   // Статусы: PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
   status        String        @default("PENDING")
@@ -208,11 +220,9 @@ model Appointment {
   source        String        @default("ONLINE_WIDGET")
 
   // Финансы
-  price         Int           // Итоговая цена в UZS
+  price         Int
   paidAmount    Int           @default(0)
-  // Статус оплаты: UNPAID, DEPOSIT, PAID, REFUNDED
   paymentStatus String        @default("UNPAID")
-  // Способ оплаты: CASH, CLICK, PAYME, UZUM, CARD_TERMINAL
   paymentMethod String        @default("CASH")
 
   // Данные клиента на момент записи
@@ -253,4 +263,18 @@ model Review {
   user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("reviews")
+}
+
+// 10. OTP-коды для бесплатного входа через Telegram / SMS
+model VerificationCode {
+  id        String   @id @default(uuid())
+  phone     String   // Номер телефона +998...
+  code      String   // 4-значный код (например: "4892")
+  channel   String   @default("TELEGRAM") // TELEGRAM или SMS
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+  @@map("verification_codes")
 }
