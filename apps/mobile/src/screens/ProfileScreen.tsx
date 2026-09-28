@@ -30,7 +30,6 @@ interface ProfileScreenProps {
   salon: Salon | null;
   currentUser: User | null;
   onLogout: () => void;
-  onSwitchToClient: () => void;
   onReloadSalon?: () => void;
 }
 
@@ -38,7 +37,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   salon,
   currentUser,
   onLogout,
-  onSwitchToClient,
   onReloadSalon,
 }) => {
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
@@ -218,14 +216,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             ))}
           </View>
         </View>
-
-        {/* Переключение в режим клиента */}
-        <TouchableOpacity
-          onPress={onSwitchToClient}
-          style={styles.clientSwitchBtn}
-        >
-          <Text style={styles.clientSwitchBtnText}>💇 Переключиться в режим клиента</Text>
-        </TouchableOpacity>
 
         {/* Кнопка выхода */}
         <TouchableOpacity onPress={onLogout} style={styles.logoutBtn}>

@@ -198,7 +198,6 @@ export default function App() {
                 salon={currentSalon}
                 currentUser={currentUser}
                 onLogout={handleLogout}
-                onSwitchToClient={() => setMode("client")}
                 onReloadSalon={() => loadSalonData(currentUser || undefined)}
               />
             )}
