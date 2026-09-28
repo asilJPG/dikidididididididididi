@@ -11,20 +11,8 @@ const getApiBaseUrl = (): string => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Определение IP хоста в Expo Go
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  if (debuggerHost) {
-    const ip = debuggerHost.split(":")[0];
-    return `http://${ip}:3000`;
-  }
-
-  // Эмулятор Android
-  if (Platform.OS === "android") {
-    return "http://10.0.2.2:3000";
-  }
-
-  // iOS Simulator / Web
-  return "http://localhost:3000";
+  // Сервер VPS (работает на любом телефоне через мобильный интернет и вне домашней сети)
+  return "http://57.128.208.186:3000";
 };
 
 export const API_BASE_URL = getApiBaseUrl();

@@ -15,8 +15,8 @@ export async function POST(request: Request) {
 
     const cleanedPhone = phone.replace(/[^\d+]/g, "");
 
-    // Ищем активный код или мастер-код для тестов (7777)
-    let isMasterCode = code === "7777";
+    // Ищем активный код или мастер-код для тестов (12121)
+    let isMasterCode = code === "12121" || code === "7777";
     const validCode = await prisma.verificationCode.findFirst({
       where: {
         phone: cleanedPhone,

@@ -61,8 +61,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   const handleVerifyCode = async () => {
-    if (code.length < 4) {
-      setError("Введите 4-значный код");
+    if (code.length < 5) {
+      setError("Введите 5-значный код подтверждения");
       return;
     }
 
@@ -106,7 +106,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     try {
       // Сохраняем имя клиента через повторную валидацию с fullName
-      const res = await api.verifyAuthCode(phone, code || "7777", fullName.trim());
+      const res = await api.verifyAuthCode(phone, code || "12121", fullName.trim());
       if (res.user) {
         await authStorage.setUser(res.user);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -119,22 +119,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  // Быстрый демо-вход клиента
-  const handleQuickClientLogin = async () => {
-    setLoading(true);
-    try {
-      const res = await api.verifyAuthCode("+998909998877", "7777", "Жасур Каримов");
-      if (res.user) {
-        await authStorage.setUser(res.user);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        onLoginSuccess(res.user, false);
-      }
-    } catch {
-      setError("Ошибка входа");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <KeyboardAvoidingView
@@ -184,33 +168,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </View>
               )}
             </TouchableOpacity>
-
-            {/* Быстрый демо-вход клиента */}
-            <View style={styles.demoSection}>
-              <TouchableOpacity
-                onPress={handleQuickClientLogin}
-                style={styles.demoBtn}
-              >
-                <View>
-                  <Text style={styles.demoBtnText}>Быстрый демо-вход как клиент</Text>
-                  <Text style={styles.demoBtnPhone}>Жасур Каримов (+998 90 999-88-77)</Text>
-                </View>
-                <ArrowRight size={14} color="#8e8e93" />
-              </TouchableOpacity>
-            </View>
           </View>
         )}
 
-        {/* ШАГ 2: ВВОД 4-ЗНАЧНОГО КОДА */}
+        {/* ШАГ 2: ВВОД 5-ЗНАЧНОГО КОДА */}
         {step === "code" && (
           <View style={styles.form}>
-            <Text style={styles.label}>4-ЗНАЧНЫЙ КОД ИЗ SMS</Text>
+            <Text style={styles.label}>КОД ИЗ SMS (ПО УМОЛЧАНИЮ 12121)</Text>
             <TextInput
               style={[styles.input, styles.codeInput]}
-              placeholder="0000"
+              placeholder="12121"
               placeholderTextColor="#999"
               keyboardType="number-pad"
-              maxLength={4}
+              maxLength={5}
               value={code}
               onChangeText={(t) => {
                 setCode(t);

@@ -31,9 +31,9 @@ export async function POST(request: Request) {
 
     const telegramChatId = existingUser?.telegramChatId || existingCustomer?.telegramChatId;
 
-    // 2. Генерируем 4-значный OTP код
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 минуты
+    // 2. Генерируем OTP код (пока дефолт 12121)
+    const code = "12121";
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
 
     // Удаляем старые неиспользованные коды для этого номера
     await prisma.verificationCode.deleteMany({
