@@ -12,7 +12,7 @@ const getApiBaseUrl = (): string => {
   }
 
   // Сервер VPS (работает на любом телефоне через мобильный интернет и вне домашней сети)
-  return "http://57.128.208.186:3000";
+  return "http://57.128.208.186";
 };
 
 export const API_BASE_URL = getApiBaseUrl();
