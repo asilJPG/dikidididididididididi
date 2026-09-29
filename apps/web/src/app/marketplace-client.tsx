@@ -387,7 +387,7 @@ export function MarketplaceClient({ initialSalons }: { initialSalons: Salon[] })
       <section className="bg-white rounded-3xl p-6 sm:p-10 border border-black/[0.06] shadow-sm space-y-6">
         <div className="text-center max-w-xl mx-auto space-y-1">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-950">
-            Почему тысячи клиентов выбирают DIKIDI UZ
+            Почему тысячи клиентов выбирают LOOK
           </h2>
           <p className="text-xs sm:text-sm text-neutral-500">
             Современный стандарт записи к мастерам индустрии красоты в Узбекистане
@@ -435,7 +435,7 @@ export function MarketplaceClient({ initialSalons }: { initialSalons: Salon[] })
             <span>Для салонов красоты и барбершопов</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-            Подключите свой салон к платформе DIKIDI UZ
+            Подключите свой салон к платформе LOOK
           </h2>
           <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
             Получите готовую ссылку для онлайн-записи в Instagram, электронный журнал записей, базу клиентов и автоматический расчёт зарплат мастеров.

@@ -605,7 +605,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-neutral-500 font-medium">Загрузка DIKIDI CRM...</p>
+          <p className="text-xs text-neutral-500 font-medium">Загрузка LOOK CRM...</p>
         </div>
       </div>
     );
@@ -620,7 +620,7 @@ export default function DashboardPage() {
           <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2">
               <span className="font-semibold text-base tracking-tight text-neutral-900">
-                DIKIDI
+                LOOK
               </span>
               <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-black/[0.06] text-neutral-600">
                 CRM

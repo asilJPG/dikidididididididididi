@@ -106,11 +106,11 @@ export function Navbar() {
         <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-neutral-950 flex items-center justify-center text-white font-black text-sm tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
-              D
+              L
             </div>
             <div className="flex items-center gap-1.5">
               <span className="font-black text-lg tracking-tight text-neutral-950">
-                DIKIDI
+                LOOK
               </span>
               <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-600 tracking-wider border border-neutral-200/60">
                 UZ

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       }
 
       const slug = salon ? salon.slug : "bro-barbershop";
-      const salonName = salon ? salon.name : "DIKIDI UZ";
+      const salonName = salon ? salon.name : "LOOK UZ";
 
       // Базовый URL приложения
       const host = request.headers.get("host") || "localhost:3000";

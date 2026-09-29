@@ -150,7 +150,7 @@ export default function LoginPage() {
         </Link>
         <Link href="/" className="flex items-center gap-1.5">
           <span className="font-black text-sm tracking-tight text-neutral-950">
-            DIKIDI
+            LOOK
           </span>
           <span className="text-[9px] font-bold uppercase px-1 py-0.2 rounded bg-neutral-100 text-neutral-600">
             UZ
@@ -296,7 +296,7 @@ export default function LoginPage() {
 
       {/* Футер */}
       <footer className="max-w-md w-full mx-auto text-center text-[11px] text-neutral-400">
-        DIKIDI UZ · Безопасный вход по номеру телефона в Узбекистане
+        LOOK UZ · Безопасный вход по номеру телефона в Узбекистане
       </footer>
     </div>
   );

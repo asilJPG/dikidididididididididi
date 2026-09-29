@@ -13,11 +13,11 @@ export function Footer() {
           <div className="space-y-4 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 rounded-xl bg-neutral-950 flex items-center justify-center text-white font-black text-sm tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
-                D
+                L
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-lg tracking-tight text-neutral-950">
-                  DIKIDI
+                  LOOK
                 </span>
                 <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-600 tracking-wider border border-neutral-200/60">
                   UZ
@@ -76,7 +76,7 @@ export function Footer() {
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/business" className="hover:text-neutral-950 transition-colors font-medium text-neutral-900">
-                  DIKIDI Business (CRM)
+                  LOOK Business (CRM)
                 </Link>
               </li>
               <li>
@@ -124,7 +124,7 @@ export function Footer() {
 
         {/* Нижняя полоска */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
-          <p>© 2026 DIKIDI UZ. Все права защищены. Ташкент, Узбекистан.</p>
+          <p>© 2026 LOOK UZ. Все права защищены. Ташкент, Узбекистан.</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1 text-neutral-500">
               Сделано для сферы услуг в Узбекистане

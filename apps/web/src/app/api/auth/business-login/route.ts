@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       user,
-      message: "Успешный вход в DIKIDI Business",
+      message: "Успешный вход в LOOK Business",
     });
 
     response.cookies.set("dikidi_user_id", user.id, {

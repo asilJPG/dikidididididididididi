@@ -375,9 +375,9 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//DIKIDI UZ//Online Booking//RU
+PRODID:-//LOOK UZ//Online Booking//RU
 BEGIN:VEVENT
-UID:${confirmedAppointment.id}@dikidi.uz
+UID:${confirmedAppointment.id}@look.uz
 DTSTAMP:${start}
 DTSTART:${start}
 DTEND:${end}
@@ -451,7 +451,7 @@ END:VCALENDAR`;
             <div className="relative z-10 flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/10 backdrop-blur-md text-white border border-white/20 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Проверенный партнер DIKIDI</span>
+                <span>Проверенный партнер LOOK</span>
               </span>
             </div>
           </div>

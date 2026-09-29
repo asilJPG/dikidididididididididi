@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "DIKIDI Business Узбекистан — CRM и онлайн-запись для салонов красоты и мастеров",
+  title: "LOOK Business Узбекистан — CRM и онлайн-запись для салонов красоты и мастеров",
   description:
     "Управляйте расписанием, ведите базу клиентов и принимайте записи 24/7 через Telegram Mini App и сайт. Создано специально для рынка Узбекистана.",
 };
@@ -89,13 +89,13 @@ export default function BusinessLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] font-sans selection:bg-neutral-900 selection:text-white flex flex-col">
-      {/* Навигационная панель DIKIDI Business */}
+      {/* Навигационная панель LOOK Business */}
       <header className="sticky top-0 z-40 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-black/[0.06]">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/business" className="flex items-center gap-2">
               <span className="font-semibold text-base tracking-[-0.03em] text-neutral-900">
-                DIKIDI
+                LOOK
               </span>
               <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-neutral-900 text-white tracking-wider">
                 Business

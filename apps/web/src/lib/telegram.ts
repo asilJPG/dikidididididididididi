@@ -37,7 +37,7 @@ export async function sendTelegramMessage(
  * Отправка OTP-кода для подтверждения входа (Бесплатно вместо SMS!)
  */
 export async function sendTelegramOtp(chatId: string | number, code: string) {
-  const message = `🔐 <b>DIKIDI UZ: Код для входа</b>\n\nВаш проверочный код: <code>${code}</code>\n\n<i>Никому не сообщайте этот код. Срок действия: 2 минуты.</i>`;
+  const message = `🔐 <b>LOOK: Код для входа</b>\n\nВаш проверочный код: <code>${code}</code>\n\n<i>Никому не сообщайте этот код. Срок действия: 2 минуты.</i>`;
   return sendTelegramMessage(chatId, message);
 }
 

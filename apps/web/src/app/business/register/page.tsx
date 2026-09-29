@@ -136,12 +136,12 @@ export default function BusinessRegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
-      {/* Выделенный хедер DIKIDI Business без клиентских ссылок */}
+      {/* Выделенный хедер LOOK Business без клиентских ссылок */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-black/[0.06]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/business" className="flex items-center gap-2">
             <span className="font-black text-lg tracking-tight text-neutral-950">
-              DIKIDI
+              LOOK
             </span>
             <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-neutral-950 text-white tracking-wider">
               Business
@@ -162,7 +162,7 @@ export default function BusinessRegisterPage() {
         <div className="text-center space-y-2 max-w-xl mx-auto">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900 text-white text-[11px] font-bold tracking-wider uppercase mb-1">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>DIKIDI Business Onboarding</span>
+            <span>LOOK Business Onboarding</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-neutral-950">
             Подключение заведения
@@ -412,7 +412,7 @@ export default function BusinessRegisterPage() {
 
               <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
                 <span className="text-neutral-400">Онлайн-запись 24/7</span>
-                <span className="font-bold text-neutral-900">DIKIDI UZ</span>
+                <span className="font-bold text-neutral-900">LOOK UZ</span>
               </div>
             </div>
 
@@ -425,7 +425,7 @@ export default function BusinessRegisterPage() {
       </main>
 
       <footer className="py-8 border-t border-black/[0.06] text-center text-xs text-neutral-400 mt-auto">
-        DIKIDI Business · Платформа управления и онлайн-записи в Узбекистане · Ташкент, 2026
+        LOOK Business · Платформа управления и онлайн-записи в Узбекистане · Ташкент, 2026
       </footer>
     </div>
   );

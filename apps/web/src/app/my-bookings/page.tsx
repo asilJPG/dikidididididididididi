@@ -237,9 +237,9 @@ export default function MyBookingsPage() {
 
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//DIKIDI UZ//Online Booking//RU
+PRODID:-//LOOK UZ//Online Booking//RU
 BEGIN:VEVENT
-UID:${appt.id}@dikidi.uz
+UID:${appt.id}@look.uz
 DTSTAMP:${start}
 DTSTART:${start}
 DTEND:${end}

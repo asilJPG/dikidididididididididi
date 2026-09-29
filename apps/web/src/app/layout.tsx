@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dikidi UZ - Онлайн-запись и CRM для услуг в Узбекистане",
+  title: "LOOK — Онлайн-запись и CRM для салонов красоты в Узбекистане",
   description: "Платформа автоматизации записи клиентов для салонов красоты, барбершопов и частных мастеров в Узбекистане",
 };
 
