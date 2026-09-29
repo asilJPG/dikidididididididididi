@@ -204,7 +204,7 @@ export default function StaffPage() {
         body: JSON.stringify({
           id,
           status: newStatus,
-          paymentStatus: newStatus === "COMPLETED" ? "PAID" : undefined,
+          paymentStatus: newStatus === "COMPLETED" ? "PAID" : "UNPAID",
         }),
       });
       if (res.ok) {

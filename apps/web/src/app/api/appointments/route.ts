@@ -63,11 +63,29 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "ID записи обязателен" }, { status: 400 });
     }
 
+    const currentAppt = await prisma.appointment.findUnique({
+      where: { id },
+      include: { customer: true, service: true },
+    });
+
+    if (!currentAppt) {
+      return NextResponse.json({ error: "Запись не найдена" }, { status: 404 });
+    }
+
+    let nextPaymentStatus = paymentStatus;
+    if (nextPaymentStatus === undefined) {
+      if (status === "COMPLETED") {
+        nextPaymentStatus = "PAID";
+      } else if (status === "CANCELLED" || status === "NO_SHOW") {
+        nextPaymentStatus = "UNPAID";
+      }
+    }
+
     const updated = await prisma.appointment.update({
       where: { id },
       data: {
         ...(status ? { status } : {}),
-        ...(paymentStatus ? { paymentStatus } : {}),
+        ...(nextPaymentStatus !== undefined ? { paymentStatus: nextPaymentStatus } : {}),
         ...(paymentMethod ? { paymentMethod } : {}),
         ...(notes !== undefined ? { clientComment: notes } : {}),
       },
@@ -77,6 +95,34 @@ export async function PATCH(request: Request) {
         customer: true,
       },
     });
+
+    // Синхронизация статистики клиента
+    if (updated.customerId) {
+      const completedCount = await prisma.appointment.count({
+        where: {
+          customerId: updated.customerId,
+          status: "COMPLETED",
+        },
+      });
+
+      const completedSum = await prisma.appointment.aggregate({
+        where: {
+          customerId: updated.customerId,
+          status: "COMPLETED",
+        },
+        _sum: {
+          price: true,
+        },
+      });
+
+      await prisma.customer.update({
+        where: { id: updated.customerId },
+        data: {
+          totalVisits: completedCount,
+          totalSpent: completedSum._sum.price || 0,
+        },
+      });
+    }
 
     return NextResponse.json({ appointment: updated });
   } catch (error) {
@@ -108,6 +154,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
     }
 
+    const digitsOnly = clientPhone.replace(/\D/g, "");
+    const cleanPhone = digitsOnly.startsWith("998") ? `+${digitsOnly}` : `+998${digitsOnly.slice(-9)}`;
+
     const startDateTime = parseTashkentDateTime(date, time);
     const endDateTime = new Date(startDateTime.getTime() + service.durationMinutes * 60 * 1000);
 
@@ -116,7 +165,7 @@ export async function POST(request: Request) {
       where: {
         salonId_phone: {
           salonId,
-          phone: clientPhone,
+          phone: cleanPhone,
         },
       },
     });
@@ -125,18 +174,10 @@ export async function POST(request: Request) {
       customer = await prisma.customer.create({
         data: {
           salonId,
-          phone: clientPhone,
+          phone: cleanPhone,
           fullName: clientName,
-          totalVisits: 1,
-          totalSpent: service.price,
-        },
-      });
-    } else {
-      customer = await prisma.customer.update({
-        where: { id: customer.id },
-        data: {
-          totalVisits: customer.totalVisits + 1,
-          totalSpent: customer.totalSpent + service.price,
+          totalVisits: 0,
+          totalSpent: 0,
         },
       });
     }

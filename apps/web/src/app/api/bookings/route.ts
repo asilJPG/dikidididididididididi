@@ -83,12 +83,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Нормализуем телефон клиента
+    const digitsOnly = clientPhone.replace(/\D/g, "");
+    const cleanPhone = digitsOnly.startsWith("998") ? `+${digitsOnly}` : `+998${digitsOnly.slice(-9)}`;
+
     // Находим или создаем клиента в CRM салона, сохраняя Telegram данные
     let customer = await prisma.customer.findUnique({
       where: {
         salonId_phone: {
           salonId: salon.id,
-          phone: clientPhone,
+          phone: cleanPhone,
         },
       },
     });
@@ -97,21 +101,19 @@ export async function POST(request: Request) {
       customer = await prisma.customer.create({
         data: {
           salonId: salon.id,
-          phone: clientPhone,
+          phone: cleanPhone,
           fullName: clientName,
           telegramId: telegramId ? String(telegramId) : null,
           telegramChatId: telegramChatId ? String(telegramChatId) : null,
           telegramUsername: telegramUsername || null,
-          totalVisits: 1,
-          totalSpent: service.price,
+          totalVisits: 0,
+          totalSpent: 0,
         },
       });
-    } else {
+    } else if (telegramId || telegramChatId || telegramUsername) {
       customer = await prisma.customer.update({
         where: { id: customer.id },
         data: {
-          totalVisits: customer.totalVisits + 1,
-          totalSpent: customer.totalSpent + service.price,
           ...(telegramId ? { telegramId: String(telegramId) } : {}),
           ...(telegramChatId ? { telegramChatId: String(telegramChatId) } : {}),
           ...(telegramUsername ? { telegramUsername } : {}),
@@ -133,7 +135,7 @@ export async function POST(request: Request) {
         price: service.price,
         paymentStatus: PaymentStatus.UNPAID,
         clientName,
-        clientPhone,
+        clientPhone: cleanPhone,
         clientComment,
       },
       include: {

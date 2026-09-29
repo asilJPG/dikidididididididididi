@@ -16,14 +16,16 @@ export async function GET(request: Request) {
     }
 
     const digitsOnly = rawPhone.replace(/\D/g, "");
-    const phoneWithPlus = `+${digitsOnly}`;
-    const phoneWithoutPlus = digitsOnly;
+    const last9 = digitsOnly.slice(-9);
 
     const appointments = await prisma.appointment.findMany({
       where: {
-        clientPhone: {
-          in: [phoneWithPlus, phoneWithoutPlus, rawPhone],
-        },
+        OR: [
+          { clientPhone: rawPhone },
+          { clientPhone: `+${digitsOnly}` },
+          { clientPhone: digitsOnly },
+          ...(last9.length === 9 ? [{ clientPhone: { contains: last9 } }] : []),
+        ],
       },
       include: {
         salon: {
@@ -57,20 +59,20 @@ export async function GET(request: Request) {
       orderBy: { startDateTime: "desc" },
     });
 
-    const now = new Date();
-
+    // Активные / предстоящие записи: статус PENDING, CONFIRMED или IN_PROGRESS
     const upcoming = appointments.filter(
       (a: any) =>
-        new Date(a.startDateTime) >= now &&
-        a.status !== "CANCELLED" &&
-        a.status !== "COMPLETED"
+        a.status === "PENDING" ||
+        a.status === "CONFIRMED" ||
+        a.status === "IN_PROGRESS"
     );
 
+    // Завершенные / архивные: статус COMPLETED, CANCELLED или NO_SHOW
     const past = appointments.filter(
       (a: any) =>
-        new Date(a.startDateTime) < now ||
+        a.status === "COMPLETED" ||
         a.status === "CANCELLED" ||
-        a.status === "COMPLETED"
+        a.status === "NO_SHOW"
     );
 
     return NextResponse.json({

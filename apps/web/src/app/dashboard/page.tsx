@@ -67,6 +67,7 @@ export default function DashboardPage() {
 
   // Детали записи
   const [activeAppointment, setActiveAppointment] = useState<any | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   // Создание записи вручную
   const [showAddModal, setShowAddModal] = useState(false);
@@ -242,6 +243,35 @@ export default function DashboardPage() {
     newStatus: string,
     paymentMethod?: string
   ) => {
+    if (updatingStatusId) return;
+    setUpdatingStatusId(id);
+
+    const isCompleted = newStatus === "COMPLETED";
+    const paymentStatus = isCompleted ? "PAID" : "UNPAID";
+
+    // Оптимистичное обновление в локальном списке
+    setAppointments((prev) =>
+      prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              status: newStatus,
+              paymentStatus,
+              ...(paymentMethod ? { paymentMethod } : {}),
+            }
+          : a
+      )
+    );
+
+    if (activeAppointment && activeAppointment.id === id) {
+      setActiveAppointment((prev: any) => ({
+        ...prev,
+        status: newStatus,
+        paymentStatus,
+        ...(paymentMethod ? { paymentMethod } : {}),
+      }));
+    }
+
     try {
       const res = await fetch("/api/appointments", {
         method: "PATCH",
@@ -249,23 +279,19 @@ export default function DashboardPage() {
         body: JSON.stringify({
           id,
           status: newStatus,
-          paymentStatus: newStatus === "COMPLETED" ? "PAID" : undefined,
+          paymentStatus,
           paymentMethod: paymentMethod || undefined,
         }),
       });
+
       if (res.ok) {
         fetchAppointments();
-        if (activeAppointment && activeAppointment.id === id) {
-          setActiveAppointment({
-            ...activeAppointment,
-            status: newStatus,
-            paymentStatus: newStatus === "COMPLETED" ? "PAID" : activeAppointment.paymentStatus,
-            ...(paymentMethod ? { paymentMethod } : {}),
-          });
-        }
+        fetchCustomers();
       }
     } catch (err) {
-      console.error(err);
+      console.error("Status update error:", err);
+    } finally {
+      setUpdatingStatusId(null);
     }
   };
 
@@ -1525,48 +1551,91 @@ export default function DashboardPage() {
 
             {/* Смена статуса */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-neutral-800">Изменить статус:</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-neutral-800">Изменить статус:</p>
+                {updatingStatusId && (
+                  <span className="text-[10px] text-neutral-400 font-medium animate-pulse">
+                    Сохранение...
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "CONFIRMED")}
-                  className="py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 text-xs font-semibold transition-colors"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "CONFIRMED"
+                      ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-transparent"
+                  }`}
                 >
+                  {activeAppointment.status === "CONFIRMED" && <Check className="w-3.5 h-3.5" />}
                   Подтвердить
                 </button>
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "IN_PROGRESS")}
-                  className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold transition-colors border border-amber-200"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "IN_PROGRESS"
+                      ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                      : "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200"
+                  }`}
                 >
+                  {activeAppointment.status === "IN_PROGRESS" && <Check className="w-3.5 h-3.5" />}
                   В кресле
                 </button>
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "COMPLETED", "CASH")}
-                  className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-semibold transition-colors border border-emerald-200"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "COMPLETED" && (!activeAppointment.paymentMethod || activeAppointment.paymentMethod === "CASH")
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200"
+                  }`}
                 >
-                  Завершить (Наличные)
+                  {activeAppointment.status === "COMPLETED" && (!activeAppointment.paymentMethod || activeAppointment.paymentMethod === "CASH") && <Check className="w-3.5 h-3.5" />}
+                  Завершить (Нал)
                 </button>
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "COMPLETED", "CLICK")}
-                  className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-semibold transition-colors border border-blue-200"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "COMPLETED" && (activeAppointment.paymentMethod === "CLICK" || activeAppointment.paymentMethod === "PAYME")
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                      : "bg-blue-50 hover:bg-blue-100 text-blue-900 border-blue-200"
+                  }`}
                 >
-                  Завершить (Click/Payme)
+                  {activeAppointment.status === "COMPLETED" && (activeAppointment.paymentMethod === "CLICK" || activeAppointment.paymentMethod === "PAYME") && <Check className="w-3.5 h-3.5" />}
+                  Завершить (Click)
                 </button>
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "CANCELLED")}
-                  className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-semibold transition-colors border border-rose-200"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "CANCELLED"
+                      ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                      : "bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200"
+                  }`}
                 >
+                  {activeAppointment.status === "CANCELLED" && <Check className="w-3.5 h-3.5" />}
                   Отменить
                 </button>
                 <button
                   type="button"
+                  disabled={Boolean(updatingStatusId)}
                   onClick={() => handleUpdateStatus(activeAppointment.id, "NO_SHOW")}
-                  className="py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-semibold transition-colors"
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
+                    activeAppointment.status === "NO_SHOW"
+                      ? "bg-neutral-700 text-white border-neutral-700 shadow-sm"
+                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border-transparent"
+                  }`}
                 >
+                  {activeAppointment.status === "NO_SHOW" && <Check className="w-3.5 h-3.5" />}
                   Не пришел
                 </button>
               </div>

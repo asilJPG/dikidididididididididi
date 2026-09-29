@@ -89,10 +89,18 @@ export default function MyBookingsPage() {
       );
       const data = await res.json();
       if (res.ok) {
-        setUpcoming(data.upcoming || []);
-        setPast(data.past || []);
+        const up = data.upcoming || [];
+        const ps = data.past || [];
+        setUpcoming(up);
+        setPast(ps);
         setSearchedPhone(targetPhone);
         localStorage.setItem("dikidi_user_phone", targetPhone);
+
+        if (up.length === 0 && ps.length > 0) {
+          setActiveTab("past");
+        } else {
+          setActiveTab("upcoming");
+        }
       } else {
         setErrorMsg(data.error || "Не удалось найти записи");
       }
