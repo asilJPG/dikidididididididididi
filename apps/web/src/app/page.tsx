@@ -7,21 +7,26 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   // Получаем список верифицированных салонов из базы
-  const salons = await prisma.salon.findMany({
-    where: { isVerified: true },
-    include: {
-      services: {
-        where: { isActive: true },
-        take: 3,
+  let salons: any[] = [];
+  try {
+    salons = await prisma.salon.findMany({
+      where: { isVerified: true },
+      include: {
+        services: {
+          where: { isActive: true },
+          take: 3,
+        },
+        staff: {
+          where: { isActive: true },
+          take: 4,
+        },
       },
-      staff: {
-        where: { isActive: true },
-        take: 4,
-      },
-    },
-    take: 12,
-    orderBy: { rating: "desc" },
-  });
+      take: 12,
+      orderBy: { rating: "desc" },
+    });
+  } catch (err) {
+    console.error("Failed to load salons for home page:", err);
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
