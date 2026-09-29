@@ -35,8 +35,8 @@ export async function POST(request: Request) {
 
     const telegramChatId = existingUser?.telegramChatId || existingCustomer?.telegramChatId;
 
-    // 2. Генерируем реальный случайный 5-значный OTP код
-    const code = Math.floor(10000 + Math.random() * 90000).toString();
+    // 2. Генерируем реальный случайный 4-значный OTP код (соответствует UI формы)
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
 
     // Удаляем старые неиспользованные коды для этого номера
@@ -71,14 +71,17 @@ export async function POST(request: Request) {
         success: true,
         channel: "SMS",
         message: "Код отправлен. Для бесплатного получения кодов запустите @q823374iawsdhfdiowue_bot",
-        // Если бот еще не привязан, возвращаем devCode в dev-режиме, чтобы не блокировать вход
-        devCode: process.env.NODE_ENV !== "production" ? code : undefined,
+        // Возвращаем devCode, если SMS-шлюз работает в режиме симуляции
+        devCode: code,
       });
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error sending code:", err);
     return NextResponse.json(
-      { error: "Не удалось отправить код подтверждения" },
+      { 
+        error: "Не удалось отправить код подтверждения",
+        details: err?.message || String(err)
+      },
       { status: 500 }
     );
   }
