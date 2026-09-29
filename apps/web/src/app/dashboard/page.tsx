@@ -117,36 +117,46 @@ export default function DashboardPage() {
 
   // 1. Инициализация пользователя и салонов
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("dikidi_user");
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          setCurrentUser(u);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-
     async function loadSalons() {
       try {
-        const res = await fetch("/api/salons");
-        const data = await res.json();
-        if (data.salons && data.salons.length > 0) {
-          setSalonsList(data.salons);
-          const urlParams = new URLSearchParams(window.location.search);
-          const slugParam = urlParams.get("salon");
-          const targetSlug = slugParam || data.salons[0].slug;
-          setCurrentSalonSlug(targetSlug);
+        const meRes = await fetch("/api/auth/me");
+        const meData = await meRes.json();
+
+        if (!meData.user) {
+          router.push("/login?redirect=/dashboard");
+          return;
         }
+
+        const user = meData.user;
+        setCurrentUser(user);
+        localStorage.setItem("dikidi_user", JSON.stringify(user));
+
+        const isMaster = user.role === "MASTER" || Boolean(user.staffProfile);
+        const owned = user.ownedSalons || [];
+
+        if (owned.length === 0) {
+          if (isMaster) {
+            router.push("/staff");
+          } else {
+            router.push("/business/register");
+          }
+          return;
+        }
+
+        setSalonsList(owned);
+        const urlParams = new URLSearchParams(window.location.search);
+        const slugParam = urlParams.get("salon");
+        const matched = owned.find((s: any) => s.slug === slugParam);
+        const targetSlug = matched ? matched.slug : owned[0].slug;
+        setCurrentSalonSlug(targetSlug);
       } catch (err) {
         console.error("Error loading salons list:", err);
+        router.push("/login?redirect=/dashboard");
       }
     }
 
     loadSalons();
-  }, []);
+  }, [router]);
 
   // 2. Загрузка данных выбранного салона
   const fetchSalonData = async () => {
@@ -564,6 +574,17 @@ export default function DashboardPage() {
     "20:00",
   ];
 
+  if (loading || !salon) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-neutral-500 font-medium">Загрузка DIKIDI CRM...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col md:flex-row font-sans selection:bg-neutral-900 selection:text-white">
       {/* Боковое меню */}
@@ -578,6 +599,12 @@ export default function DashboardPage() {
               <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-black/[0.06] text-neutral-600">
                 CRM
               </span>
+            </Link>
+            <Link
+              href="/staff"
+              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white transition-all text-neutral-600"
+            >
+              Мастера
             </Link>
           </div>
 

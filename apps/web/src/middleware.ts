@@ -1,7 +1,21 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Защищенные разделы: CRM админка и Кабинет мастера
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/staff")) {
+    const userIdCookie = request.cookies.get("dikidi_user_id")?.value;
+    const phoneCookie = request.cookies.get("dikidi_user_phone")?.value;
+
+    if (!userIdCookie && !phoneCookie) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   return await updateSession(request);
 }
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Scissors,
   Calendar,
@@ -35,6 +36,9 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function StaffPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<"day" | "schedule" | "earnings">("day");
 
   // Мастера и выбор
@@ -71,44 +75,82 @@ export default function StaffPage() {
   const [clientNotesText, setClientNotesText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
 
-  // 1. Загрузка салонов и мастеров
+  const handleLogout = () => {
+    localStorage.removeItem("dikidi_user");
+    localStorage.removeItem("dikidi_user_phone");
+    localStorage.removeItem("dikidi_staff_id");
+    document.cookie = "dikidi_user_id=; path=/; max-age=0";
+    document.cookie = "dikidi_user_phone=; path=/; max-age=0";
+    router.push("/login");
+  };
+
+  // 1. Проверка авторизации и загрузка данных
   useEffect(() => {
     async function loadInitialData() {
       try {
+        const meRes = await fetch("/api/auth/me");
+        const meData = await meRes.json();
+
+        if (!meData.user) {
+          router.push("/login?redirect=/staff");
+          return;
+        }
+
+        const user = meData.user;
+        setCurrentUser(user);
+        localStorage.setItem("dikidi_user", JSON.stringify(user));
+
+        const isMaster = user.role === "MASTER" || Boolean(user.staffProfile);
+        const isOwner = user.role === "OWNER" || (user.ownedSalons && user.ownedSalons.length > 0);
+
+        if (!isMaster && !isOwner) {
+          // Обычный клиент не имеет доступа к кабинету мастера
+          router.push("/");
+          return;
+        }
+
+        setIsAuthorized(true);
+
         const res = await fetch("/api/salons");
         const data = await res.json();
         if (data.salons && data.salons.length > 0) {
           setSalons(data.salons);
 
-          // Проверяем сохраненный staffId
-          const savedStaffId = localStorage.getItem("dikidi_staff_id");
-          let initialStaffId = "";
-
-          if (savedStaffId) {
-            initialStaffId = savedStaffId;
+          // Если у пользователя есть привязанный профиль мастера — жестко закрепляем его
+          if (user.staffProfile?.id) {
+            setSelectedStaffId(user.staffProfile.id);
+            localStorage.setItem("dikidi_staff_id", user.staffProfile.id);
           } else {
-            // Берем первого мастера первого салона
-            for (const s of data.salons) {
-              if (s.staff && s.staff.length > 0) {
-                initialStaffId = s.staff[0].id;
-                break;
+            // Если зашел владелец салона — позволяем переключаться между своими мастерами
+            const savedStaffId = localStorage.getItem("dikidi_staff_id");
+            let initialStaffId = "";
+
+            if (savedStaffId) {
+              initialStaffId = savedStaffId;
+            } else {
+              for (const s of data.salons) {
+                if (s.staff && s.staff.length > 0) {
+                  initialStaffId = s.staff[0].id;
+                  break;
+                }
               }
             }
-          }
 
-          if (initialStaffId) {
-            setSelectedStaffId(initialStaffId);
+            if (initialStaffId) {
+              setSelectedStaffId(initialStaffId);
+            }
           }
         }
       } catch (err) {
         console.error("Error loading salons for staff page:", err);
+        router.push("/login?redirect=/staff");
       } finally {
         setLoading(false);
       }
     }
 
     loadInitialData();
-  }, []);
+  }, [router]);
 
   // 2. Загрузка данных выбранного мастера при смене selectedStaffId или selectedDate
   const loadStaffDetails = async () => {
@@ -242,6 +284,18 @@ export default function StaffPage() {
     });
   });
 
+  if (loading || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex flex-col font-sans">
+        <div className="h-14 border-b border-black/[0.06] bg-white animate-pulse" />
+        <div className="max-w-4xl mx-auto px-5 py-6 w-full space-y-6">
+          <div className="h-24 bg-white rounded-2xl animate-pulse" />
+          <div className="h-64 bg-white rounded-2xl animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
       {/* Шапка кабинета мастера */}
@@ -263,12 +317,25 @@ export default function StaffPage() {
             </span>
           </div>
 
-          <Link
-            href="/dashboard"
-            className="text-xs font-semibold px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white transition-all text-neutral-700"
-          >
-            В CRM
-          </Link>
+          <div className="flex items-center gap-2.5">
+            {currentUser?.ownedSalons?.length > 0 && (
+              <Link
+                href="/dashboard"
+                className="text-xs font-semibold px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white transition-all text-neutral-700"
+              >
+                В CRM
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Выйти из аккаунта"
+              className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Выйти</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -297,22 +364,31 @@ export default function StaffPage() {
             </div>
           </div>
 
-          <div className="w-full sm:w-auto">
-            <label className="text-[10px] uppercase font-semibold text-neutral-400 block mb-1">
-              Переключить мастера:
-            </label>
-            <select
-              value={selectedStaffId}
-              onChange={(e) => setSelectedStaffId(e.target.value)}
-              className="w-full sm:w-auto px-3 py-1.5 border border-neutral-200 rounded-xl text-xs font-semibold bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer"
-            >
-              {allStaffList.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.fullName} ({m.specialty} — {m.salonName})
-                </option>
-              ))}
-            </select>
-          </div>
+          {!currentUser?.staffProfile && allStaffList.length > 1 ? (
+            <div className="w-full sm:w-auto">
+              <label className="text-[10px] uppercase font-semibold text-neutral-400 block mb-1">
+                Переключить мастера:
+              </label>
+              <select
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+                className="w-full sm:w-auto px-3 py-1.5 border border-neutral-200 rounded-xl text-xs font-semibold bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer"
+              >
+                {allStaffList.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.fullName} ({m.specialty} — {m.salonName})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="w-full sm:w-auto">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 text-xs font-medium text-neutral-600">
+                <Scissors className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Личный кабинет</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Навигационные табы кабинета мастера */}

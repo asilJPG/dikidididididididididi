@@ -58,11 +58,26 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user,
       message: "Успешный вход в DIKIDI Business",
     });
+
+    response.cookies.set("dikidi_user_id", user.id, {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    });
+    response.cookies.set("dikidi_user_phone", user.phone, {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (error) {
     console.error("Business login error:", error);
     return NextResponse.json(
