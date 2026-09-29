@@ -56,6 +56,19 @@ interface Staff {
   staffServices?: { serviceId: string }[];
 }
 
+interface ReviewItem {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  clientName: string;
+  createdAt: string;
+  staff?: {
+    id: string;
+    fullName: string;
+    specialty: string;
+  } | null;
+}
+
 interface Salon {
   id: string;
   name: string;
@@ -69,6 +82,7 @@ interface Salon {
   categories: Category[];
   services?: Service[];
   staff: Staff[];
+  reviews?: ReviewItem[];
 }
 
 export default function BookingPage({ params }: { params: { slug: string } }) {
@@ -76,7 +90,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
   const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"services" | "staff" | "about">("services");
+  const [activeTab, setActiveTab] = useState<"services" | "staff" | "reviews" | "about">("services");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   // Состояние модального окна бронирования
@@ -464,13 +478,17 @@ END:VCALENDAR`;
                   </p>
 
                   <div className="flex items-center gap-3 pt-1 text-xs">
-                    <div className="flex items-center gap-1 font-bold text-neutral-900 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/70">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("reviews")}
+                      className="flex items-center gap-1 font-bold text-neutral-900 bg-amber-50 hover:bg-amber-100 transition-colors px-2.5 py-1 rounded-full border border-amber-200/70 text-left cursor-pointer"
+                    >
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>{salon.rating.toFixed(1)}</span>
+                      <span>{salon.rating > 0 ? salon.rating.toFixed(1) : "5.0"}</span>
                       <span className="text-neutral-500 font-normal">
-                        ({salon.reviewCount || 12} отзывов)
+                        ({(salon.reviews?.length ?? salon.reviewCount) || 0} отзывов)
                       </span>
-                    </div>
+                    </button>
                     <span className="text-neutral-300">·</span>
                     <span className="text-neutral-500">Пн-Вс: 10:00 – 21:00</span>
                   </div>
@@ -493,28 +511,28 @@ END:VCALENDAR`;
               </div>
             </div>
 
-            {/* Вкладки: Услуги / Мастера / О салоне */}
-            <div className="flex items-center gap-2 border-b border-neutral-100 mt-8 -mb-2">
+            {/* Вкладки: Услуги / Мастера / Отзывы / О салоне */}
+            <div className="flex items-center gap-2 border-b border-neutral-100 mt-8 -mb-2 overflow-x-auto scrollbar-none">
               <button
                 type="button"
                 onClick={() => setActiveTab("services")}
-                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "services"
                     ? "border-neutral-950 text-neutral-950"
                     : "border-transparent text-neutral-400 hover:text-neutral-700"
                 }`}
               >
                 <Scissors className="w-4 h-4" />
-                <span>Услуги и цены</span>
+                <span>Услуги</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-neutral-100 text-neutral-700">
-                  {salon.categories.reduce((acc, c) => acc + c.services.length, 0)}
+                  {allServices.length}
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab("staff")}
-                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "staff"
                     ? "border-neutral-950 text-neutral-950"
                     : "border-transparent text-neutral-400 hover:text-neutral-700"
@@ -529,8 +547,24 @@ END:VCALENDAR`;
 
               <button
                 type="button"
+                onClick={() => setActiveTab("reviews")}
+                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === "reviews"
+                    ? "border-neutral-950 text-neutral-950"
+                    : "border-transparent text-neutral-400 hover:text-neutral-700"
+                }`}
+              >
+                <Star className="w-4 h-4" />
+                <span>Отзывы</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-neutral-100 text-neutral-700">
+                  {salon.reviews?.length ?? salon.reviewCount ?? 0}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab("about")}
-                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "about"
                     ? "border-neutral-950 text-neutral-950"
                     : "border-transparent text-neutral-400 hover:text-neutral-700"
@@ -784,6 +818,141 @@ END:VCALENDAR`;
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ВКЛАДКА 4: ОТЗЫВЫ */}
+        {activeTab === "reviews" && (
+          <div className="space-y-6">
+            {/* Сводная карточка рейтинга */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="text-4xl sm:text-5xl font-black text-neutral-950 tracking-tight">
+                  {salon.rating > 0 ? salon.rating.toFixed(1) : "5.0"}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-5 h-5 ${
+                          s <= Math.round(salon.rating || 5)
+                            ? "fill-amber-400 text-amber-400"
+                            : "fill-neutral-200 text-neutral-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-neutral-500 font-medium mt-1">
+                    На основе {salon.reviews?.length || salon.reviewCount || 0} оценок клиентов
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBookingOpen(true);
+                  setStep(1);
+                }}
+                className="h-11 px-6 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-2 self-start sm:self-auto cursor-pointer"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Записаться и оценить</span>
+              </button>
+            </div>
+
+            {/* Список отзывов или пустое состояние */}
+            {salon.reviews && salon.reviews.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {salon.reviews.map((rev) => {
+                  const revDate = new Date(rev.createdAt);
+                  const formattedRevDate = revDate.toLocaleDateString("ru-RU", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
+
+                  return (
+                    <div
+                      key={rev.id}
+                      className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-sm space-y-3 flex flex-col justify-between"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white font-bold text-xs flex items-center justify-center">
+                              {rev.clientName ? rev.clientName.slice(0, 1).toUpperCase() : "К"}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-neutral-950">
+                                {rev.clientName || "Гость заведения"}
+                              </h4>
+                              <p className="text-[11px] text-neutral-400">{formattedRevDate}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 text-amber-400 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/50">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3 h-3 ${
+                                  s <= rev.rating
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "fill-neutral-200 text-neutral-200"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {rev.staff && (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-50 text-[11px] text-neutral-600 font-medium border border-neutral-100">
+                            <Scissors className="w-3 h-3 text-neutral-400" />
+                            <span>
+                              Мастер: <strong className="text-neutral-900">{rev.staff.fullName}</strong> ({rev.staff.specialty})
+                            </span>
+                          </div>
+                        )}
+
+                        {rev.comment ? (
+                          <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed pt-1">
+                            «{rev.comment}»
+                          </p>
+                        ) : (
+                          <p className="text-xs text-neutral-400 italic pt-1">
+                            Оценка без текстового комментария
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-10 sm:p-14 border border-black/[0.06] text-center space-y-4 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto border border-amber-200/60">
+                  <Star className="w-7 h-7 fill-amber-400 text-amber-400" />
+                </div>
+                <div className="space-y-1 max-w-sm mx-auto">
+                  <h4 className="text-base font-bold text-neutral-950">Пока нет отзывов</h4>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    Будьте первым, кто оставит свой отзыв после визита в {salon.name}! Отзывы помогают другим гостям выбрать лучшую услугу.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBookingOpen(true);
+                    setStep(1);
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-neutral-950 text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Записаться на процедуру</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

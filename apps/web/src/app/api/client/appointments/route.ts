@@ -18,13 +18,32 @@ export async function GET(request: Request) {
     const digitsOnly = rawPhone.replace(/\D/g, "");
     const last9 = digitsOnly.slice(-9);
 
+    const phoneVariants = new Set<string>();
+    phoneVariants.add(rawPhone);
+    phoneVariants.add(rawPhone.trim());
+    if (digitsOnly) {
+      phoneVariants.add(digitsOnly);
+      phoneVariants.add(`+${digitsOnly}`);
+    }
+    if (last9.length === 9) {
+      phoneVariants.add(`+998${last9}`);
+      phoneVariants.add(`998${last9}`);
+      phoneVariants.add(last9);
+      phoneVariants.add(`+998 ${last9.slice(0, 2)} ${last9.slice(2, 5)} ${last9.slice(5, 7)} ${last9.slice(7, 9)}`);
+      phoneVariants.add(`+998 (${last9.slice(0, 2)}) ${last9.slice(2, 5)}-${last9.slice(5, 7)}-${last9.slice(7, 9)}`);
+      phoneVariants.add(`+998 (${last9.slice(0, 2)}) ${last9.slice(2, 5)} ${last9.slice(5, 7)} ${last9.slice(7, 9)}`);
+      phoneVariants.add(`8 (${last9.slice(0, 2)}) ${last9.slice(2, 5)}-${last9.slice(5, 7)}-${last9.slice(7, 9)}`);
+      phoneVariants.add(`8${last9}`);
+    }
+
+    const phoneList = Array.from(phoneVariants);
+
     const appointments = await prisma.appointment.findMany({
       where: {
         OR: [
-          { clientPhone: rawPhone },
-          { clientPhone: `+${digitsOnly}` },
-          { clientPhone: digitsOnly },
-          ...(last9.length === 9 ? [{ clientPhone: { contains: last9 } }] : []),
+          { clientPhone: { in: phoneList } },
+          { customer: { phone: { in: phoneList } } },
+          ...(last9.length === 9 ? [{ clientPhone: { endsWith: last9 } }] : []),
         ],
       },
       include: {

@@ -49,12 +49,12 @@ export default function MyBookingsPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  // Автозагрузка номера из localStorage или Telegram WebApp
+  // Автозагрузка номера из localStorage, Telegram WebApp и синхронизация сессии
   useEffect(() => {
+    let initialPhone = "";
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("dikidi_user_phone");
       const storedUser = localStorage.getItem("dikidi_user");
-      let initialPhone = "";
 
       if (storedUser) {
         try {
@@ -65,23 +65,62 @@ export default function MyBookingsPage() {
       } else if (stored) {
         initialPhone = stored;
       }
-
-      setIsLoaded(true);
-
-      if (initialPhone) {
-        setPhone(initialPhone);
-        loadBookings(initialPhone);
-      }
     }
+
+    if (initialPhone) {
+      setPhone(initialPhone);
+      loadBookings(initialPhone);
+    }
+
+    // Фоновая синхронизация с сессией /api/auth/me
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setCurrentUser(data.user);
+          localStorage.setItem("dikidi_user", JSON.stringify(data.user));
+          if (data.user.phone) {
+            localStorage.setItem("dikidi_user_phone", data.user.phone);
+            if (!initialPhone) {
+              setPhone(data.user.phone);
+              loadBookings(data.user.phone);
+            }
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsLoaded(true);
+      });
   }, []);
 
-  const loadBookings = async (targetPhone: string) => {
+  const loadBookings = async (targetPhone: string, isSilent = false) => {
     if (!targetPhone || targetPhone.replace(/\D/g, "").length < 7) {
       setErrorMsg("Введите корректный номер телефона");
       return;
     }
 
-    setLoading(true);
+    // Мгновенная загрузка из кэша быстрого доступа (SWR)
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`dikidi_bookings_${targetPhone}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && Array.isArray(parsed.upcoming) && Array.isArray(parsed.past)) {
+            setUpcoming(parsed.upcoming);
+            setPast(parsed.past);
+            setSearchedPhone(targetPhone);
+            if (parsed.upcoming.length === 0 && parsed.past.length > 0) {
+              setActiveTab("past");
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!isSilent) {
+      setLoading(true);
+    }
     setErrorMsg("");
     try {
       const res = await fetch(
@@ -95,6 +134,13 @@ export default function MyBookingsPage() {
         setPast(ps);
         setSearchedPhone(targetPhone);
         localStorage.setItem("dikidi_user_phone", targetPhone);
+
+        try {
+          sessionStorage.setItem(
+            `dikidi_bookings_${targetPhone}`,
+            JSON.stringify({ upcoming: up, past: ps })
+          );
+        } catch (e) {}
 
         if (up.length === 0 && ps.length > 0) {
           setActiveTab("past");
@@ -386,7 +432,25 @@ END:VCALENDAR`;
             {/* СПИСОК 1: ПРЕДСТОЯЩИЕ ЗАПИСИ */}
             {activeTab === "upcoming" && (
               <div className="space-y-4">
-                {upcoming.length === 0 ? (
+                {loading && upcoming.length === 0 ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="bg-white p-5 rounded-2xl border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4 animate-pulse"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="h-4 w-36 bg-neutral-200 rounded-md" />
+                            <div className="h-3 w-52 bg-neutral-100 rounded-md" />
+                          </div>
+                          <div className="h-6 w-24 bg-neutral-100 rounded-full" />
+                        </div>
+                        <div className="h-10 bg-neutral-50 rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : upcoming.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-black/[0.08] p-10 text-center space-y-3">
                     <Calendar className="w-8 h-8 text-neutral-300 mx-auto" />
                     <p className="text-sm font-semibold text-neutral-900">
@@ -503,7 +567,25 @@ END:VCALENDAR`;
             {/* СПИСОК 2: ИСТОРИЯ ВИЗИТОВ */}
             {activeTab === "past" && (
               <div className="space-y-4">
-                {past.length === 0 ? (
+                {loading && past.length === 0 ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="bg-white p-5 rounded-2xl border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4 animate-pulse"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="h-4 w-36 bg-neutral-200 rounded-md" />
+                            <div className="h-3 w-52 bg-neutral-100 rounded-md" />
+                          </div>
+                          <div className="h-6 w-24 bg-neutral-100 rounded-full" />
+                        </div>
+                        <div className="h-10 bg-neutral-50 rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : past.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-black/[0.08] p-10 text-center space-y-2">
                     <p className="text-sm font-semibold text-neutral-900">История визитов пуста</p>
                     <p className="text-xs text-neutral-500">

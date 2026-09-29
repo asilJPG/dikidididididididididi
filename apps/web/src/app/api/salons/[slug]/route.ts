@@ -47,6 +47,18 @@ export async function GET(
             },
           },
         },
+        reviews: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            staff: {
+              select: {
+                id: true,
+                fullName: true,
+                specialty: true,
+              },
+            },
+          },
+        },
       },
     });
 
