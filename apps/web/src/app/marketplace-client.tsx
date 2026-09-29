@@ -310,9 +310,10 @@ export function MarketplaceClient({ initialSalons }: { initialSalons: Salon[] })
           /* Сетка карточек салонов */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredSalons.map((salon) => (
-              <div
+              <Link
                 key={salon.id}
-                className="group bg-white rounded-3xl p-6 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-black/[0.12] transition-all flex flex-col justify-between space-y-5"
+                href={`/b/${salon.slug}`}
+                className="group bg-white rounded-3xl p-6 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-black/[0.15] transition-all flex flex-col justify-between space-y-5 cursor-pointer block"
               >
                 <div className="space-y-4">
                   {/* Шапка карточки */}
@@ -372,14 +373,11 @@ export function MarketplaceClient({ initialSalons }: { initialSalons: Salon[] })
                 </div>
 
                 {/* Нижняя кнопка онлайн-записи */}
-                <Link
-                  href={`/b/${salon.slug}`}
-                  className="w-full h-11 px-5 rounded-2xl bg-neutral-950 text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 shadow-sm group-hover:bg-neutral-900"
-                >
+                <div className="w-full h-11 px-5 rounded-2xl bg-neutral-950 text-white text-xs font-semibold group-hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 shadow-sm">
                   <span>Записаться онлайн</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
             ))}
           </div>
         )}
