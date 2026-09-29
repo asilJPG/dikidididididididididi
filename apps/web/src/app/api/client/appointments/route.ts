@@ -60,14 +60,14 @@ export async function GET(request: Request) {
     const now = new Date();
 
     const upcoming = appointments.filter(
-      (a) =>
+      (a: any) =>
         new Date(a.startDateTime) >= now &&
         a.status !== "CANCELLED" &&
         a.status !== "COMPLETED"
     );
 
     const past = appointments.filter(
-      (a) =>
+      (a: any) =>
         new Date(a.startDateTime) < now ||
         a.status === "CANCELLED" ||
         a.status === "COMPLETED"

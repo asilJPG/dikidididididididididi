@@ -56,10 +56,10 @@ export async function GET(
 
     // Расчет финансовой статистики мастера за период
     const completedAppts = appointments.filter(
-      (a) => a.status === "COMPLETED" || a.paymentStatus === "PAID"
+      (a: any) => a.status === "COMPLETED" || a.paymentStatus === "PAID"
     );
 
-    const totalRevenue = completedAppts.reduce((sum, a) => sum + a.price, 0);
+    const totalRevenue = completedAppts.reduce((sum: number, a: any) => sum + a.price, 0);
     const commissionPercent = staff.commissionPercent || 40;
     const staffEarnings = Math.round((totalRevenue * commissionPercent) / 100);
 
