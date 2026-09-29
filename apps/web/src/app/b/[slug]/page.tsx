@@ -260,6 +260,10 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
       }
 
       setConfirmedAppointment(data.appointment);
+      try {
+        localStorage.setItem("dikidi_user_phone", clientPhone);
+        document.cookie = `dikidi_user_phone=${encodeURIComponent(clientPhone)}; path=/; max-age=2592000; SameSite=Lax`;
+      } catch (e) {}
       setStep(5);
     } catch (err) {
       setErrorMsg("Ошибка сети при отправке записи");

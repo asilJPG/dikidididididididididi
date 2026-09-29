@@ -93,7 +93,7 @@ export default function BusinessLandingPage() {
       <header className="sticky top-0 z-40 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-black/[0.06]">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/business" className="flex items-center gap-2">
               <span className="font-semibold text-base tracking-[-0.03em] text-neutral-900">
                 DIKIDI
               </span>
@@ -103,12 +103,12 @@ export default function BusinessLandingPage() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
-              href="/"
-              className="text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors hidden sm:block"
+              href="/business/register"
+              className="text-xs font-semibold text-neutral-700 hover:text-neutral-950 transition-colors hidden sm:block px-3 py-1.5"
             >
-              Каталог заведений
+              Подключить салон
             </Link>
             <Link
               href="/login"

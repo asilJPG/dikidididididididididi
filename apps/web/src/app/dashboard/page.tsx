@@ -567,7 +567,7 @@ export default function DashboardPage() {
         <div>
           {/* Бренд */}
           <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2">
               <span className="font-semibold text-base tracking-tight text-neutral-900">
                 DIKIDI
               </span>

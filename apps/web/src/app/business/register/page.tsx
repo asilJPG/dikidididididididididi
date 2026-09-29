@@ -22,8 +22,6 @@ import {
   Star,
   Store,
 } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 
 const CATEGORIES = [
   { id: "BARBERSHOP", label: "Барбершоп", desc: "Мужские стрижки и борода", icon: Scissors },
@@ -138,7 +136,26 @@ export default function BusinessRegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
-      <Navbar />
+      {/* Выделенный хедер DIKIDI Business без клиентских ссылок */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-black/[0.06]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link href="/business" className="flex items-center gap-2">
+            <span className="font-black text-lg tracking-tight text-neutral-950">
+              DIKIDI
+            </span>
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-neutral-950 text-white tracking-wider">
+              Business
+            </span>
+          </Link>
+
+          <Link
+            href="/login"
+            className="text-xs font-semibold text-neutral-600 hover:text-neutral-950 transition-colors"
+          >
+            Уже есть аккаунт? Войти в CRM
+          </Link>
+        </div>
+      </header>
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full space-y-8">
         {/* Заголовок страницы */}
@@ -407,7 +424,9 @@ export default function BusinessRegisterPage() {
         </div>
       </main>
 
-      <Footer />
+      <footer className="py-8 border-t border-black/[0.06] text-center text-xs text-neutral-400 mt-auto">
+        DIKIDI Business · Платформа управления и онлайн-записи в Узбекистане · Ташкент, 2026
+      </footer>
     </div>
   );
 }
