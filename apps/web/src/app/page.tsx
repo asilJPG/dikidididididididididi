@@ -35,27 +35,9 @@ export default async function HomePage() {
       {/* Навигационная панель с фильтром по авторизации и роли */}
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto px-6 pt-10 pb-20 w-full space-y-12">
+      <main className="flex-1 max-w-5xl mx-auto px-6 pt-10 pb-16 w-full space-y-12">
         {/* Интерактивный клиентский маркетплейс */}
         <MarketplaceClient initialSalons={salons as any} />
-
-        {/* Блок для владельцев бизнеса */}
-        <section className="bg-white rounded-3xl p-8 border border-black/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-          <div className="space-y-1.5 max-w-lg">
-            <h3 className="text-base font-semibold text-neutral-900">
-              Вы мастер или владелец заведения?
-            </h3>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              Подключите онлайн-запись через Telegram Mini App, ведите базу постоянных клиентов и управляйте расписанием в единой системе DIKIDI Business.
-            </p>
-          </div>
-          <Link
-            href="/business"
-            className="h-10 px-5 rounded-full border border-neutral-300 text-neutral-800 hover:border-neutral-900 text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0"
-          >
-            Подробнее о DIKIDI Business <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </section>
       </main>
 
       {/* Единый брендовый футер */}
