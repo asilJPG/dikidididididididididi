@@ -273,78 +273,52 @@ END:VCALENDAR`;
         ) : (
           /* ================= АВТОРИЗОВАННЫЙ КЛИЕНТ ================= */
           <div className="space-y-6">
-            {/* Заголовок */}
-            <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
-                Мои записи и визиты
-              </h1>
-              <p className="text-xs text-neutral-500">
-                Управляйте вашими бронированиями, переносите или отменяйте визиты, оставляйте отзывы
-              </p>
+            {/* Карточка профиля авторизованного пользователя */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-neutral-950 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                  {currentUser.fullName ? currentUser.fullName[0].toUpperCase() : "К"}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold tracking-tight text-neutral-950">
+                      {currentUser.fullName || "Клиент"}
+                    </h1>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-700 border border-neutral-200/60">
+                      {currentUser.role === "OWNER" || currentUser.role === "SALON_OWNER"
+                        ? "Владелец"
+                        : currentUser.role === "MASTER"
+                        ? "Мастер"
+                        : "Клиент"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500 font-medium">
+                    {formatPhoneUZ(currentUser.phone || phone)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
+                <Link
+                  href="/"
+                  className="h-10 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  <span>Записаться на услугу</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => loadBookings(currentUser.phone || phone)}
+                  disabled={loading}
+                  className="h-10 w-10 rounded-xl border border-neutral-200/80 hover:bg-neutral-100 text-neutral-600 flex items-center justify-center transition-colors disabled:opacity-50"
+                  title="Обновить список"
+                >
+                  <RotateCcw className={`w-4 h-4 ${loading ? "animate-spin text-neutral-900" : ""}`} />
+                </button>
+              </div>
             </div>
 
-        {/* Форма поиска по номеру телефона */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+998 90 123-45-67"
-                className="w-full pl-10 pr-4 h-11 bg-neutral-50 border border-neutral-200/90 rounded-xl text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-11 px-6 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shrink-0"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Search className="w-3.5 h-3.5" /> Найти мои записи
-                </>
-              )}
-            </button>
-          </form>
-
-          {errorMsg && (
-            <p className="text-xs font-medium text-rose-600 mt-2.5 flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {errorMsg}
-            </p>
-          )}
-
-          {searchedPhone && (
-            <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
-              <span>
-                Показаны записи для номера:{" "}
-                <strong className="text-neutral-900 font-semibold">
-                  {formatPhoneUZ(searchedPhone)}
-                </strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPhone("");
-                  setSearchedPhone("");
-                  setUpcoming([]);
-                  setPast([]);
-                  localStorage.removeItem("dikidi_user_phone");
-                }}
-                className="text-neutral-400 hover:text-neutral-700 transition-colors"
-              >
-                Сменить номер
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Табы: Предстоящие vs История */}
-        {searchedPhone && (
-          <div className="space-y-4">
+            {/* Табы: Предстоящие vs История визитов */}
             <div className="flex border-b border-neutral-200">
               <button
                 type="button"
@@ -355,8 +329,10 @@ END:VCALENDAR`;
                     : "border-transparent text-neutral-400 hover:text-neutral-700"
                 }`}
               >
-                <span>Предстоящие</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-neutral-100 text-neutral-800">
+                <span>Предстоящие визиты</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === "upcoming" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
+                }`}>
                   {upcoming.length}
                 </span>
               </button>
@@ -370,7 +346,9 @@ END:VCALENDAR`;
                 }`}
               >
                 <span>История визитов</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-neutral-100 text-neutral-800">
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === "past" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
+                }`}>
                   {past.length}
                 </span>
               </button>
@@ -575,8 +553,6 @@ END:VCALENDAR`;
                 )}
               </div>
             )}
-          </div>
-        )}
           </div>
         )}
       </main>
