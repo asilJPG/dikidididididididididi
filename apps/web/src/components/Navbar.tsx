@@ -152,6 +152,19 @@ export function Navbar() {
           ) : (
             /* ================= АВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ ================= */
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Переход в каталог услуг */}
+              <Link
+                href="/"
+                className={`px-3.5 py-2 rounded-full transition-all flex items-center gap-1.5 text-xs font-semibold ${
+                  pathname === "/"
+                    ? "bg-neutral-950 text-white shadow-sm"
+                    : "text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100"
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Услуги и салоны</span>
+              </Link>
+
               {/* Вкладка «Мои записи» для клиентов */}
               <Link
                 href="/my-bookings"

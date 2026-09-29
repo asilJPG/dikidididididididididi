@@ -271,17 +271,37 @@ END:VCALENDAR`;
                 Чтобы просматривать запланированные визиты, переносить время или отменять бронирования, войдите по номеру телефона
               </p>
             </div>
-            <Link
-              href="/login"
-              className="w-full h-12 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
-            >
-              <User className="w-4 h-4" />
-              <span>Войти по номеру телефона</span>
-            </Link>
+            <div className="space-y-3 pt-2">
+              <Link
+                href="/login"
+                className="w-full h-12 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+              >
+                <User className="w-4 h-4" />
+                <span>Войти по номеру телефона</span>
+              </Link>
+              <Link
+                href="/"
+                className="w-full h-11 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Перейти к каталогу услуг</span>
+              </Link>
+            </div>
           </div>
         ) : (
           /* ================= АВТОРИЗОВАННЫЙ КЛИЕНТ ================= */
           <div className="space-y-6">
+            {/* Быстрый переход в каталог заведений и услуг */}
+            <div className="flex items-center justify-between">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-700 hover:text-neutral-950 px-3.5 py-2 rounded-xl bg-white border border-black/[0.06] shadow-xs hover:shadow-sm transition-all"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-neutral-400" />
+                <span>В каталог заведений и услуг</span>
+              </Link>
+            </div>
+
             {/* Карточка профиля авторизованного пользователя */}
             <div className="bg-white p-5 sm:p-6 rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
