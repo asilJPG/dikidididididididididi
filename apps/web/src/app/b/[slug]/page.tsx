@@ -1067,10 +1067,14 @@ END:VCALENDAR`;
                       {!loadingSlots && availableSlots.length === 0 ? (
                         <div className="bg-neutral-50 rounded-2xl p-5 text-center border border-neutral-200/60">
                           <p className="text-xs font-semibold text-neutral-700">
-                            Все слоты заняты
+                            {selectedDate === daysList[0]?.dateStr
+                              ? "На сегодня все доступные слоты завершены или заняты"
+                              : "Все слоты заняты"}
                           </p>
                           <p className="text-[11px] text-neutral-400 mt-0.5">
-                            Пожалуйста, выберите другой день
+                            {selectedDate === daysList[0]?.dateStr
+                              ? "Пожалуйста, выберите завтрашний день или другую дату выше"
+                              : "Пожалуйста, выберите другой день"}
                           </p>
                         </div>
                       ) : (

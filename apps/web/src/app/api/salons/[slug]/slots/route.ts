@@ -46,14 +46,20 @@ export async function GET(
       return NextResponse.json({ error: "Услуга не найдена" }, { status: 404 });
     }
 
-    // Целевая дата
-    const targetDate = new Date(dateStr + "T00:00:00");
-    const dayOfWeek = targetDate.getDay(); // 0-6
+    // Целевая дата: парсим корректно день недели
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const targetDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    const dayOfWeek = targetDate.getUTCDay(); // 0 - воскресенье, 1..6
 
     // Мастера, способные оказать эту услугу
     let eligibleStaff = salon.staff.filter((st: any) =>
       st.staffServices?.some((ss: any) => ss.serviceId === serviceId)
     );
+
+    // Если у услуги еще нет персональных привязок, ее могут оказывать все активные мастера салона
+    if (eligibleStaff.length === 0) {
+      eligibleStaff = salon.staff.filter((st: any) => st.isActive !== false);
+    }
 
     if (staffId && staffId !== "any") {
       eligibleStaff = eligibleStaff.filter((st: any) => st.id === staffId);
@@ -62,6 +68,16 @@ export async function GET(
     if (eligibleStaff.length === 0) {
       return NextResponse.json({ slots: [] });
     }
+
+    // Текущее время в Ташкенте для отсечения уже прошедших слотов сегодняшнего дня
+    const nowInTashkent = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Tashkent",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date()); // "YYYY-MM-DD"
+    const isToday = dateStr === nowInTashkent;
+    const currentTashkentMinutes = isToday ? getTashkentDayMinutes(new Date()) : -1;
 
     // Начало и конец суток по Ташкенту
     const { startOfDay, endOfDay } = getTashkentDayRange(dateStr);
@@ -76,12 +92,25 @@ export async function GET(
       },
     });
 
-    const durationMin = service.durationMinutes;
+    const durationMin = service.durationMinutes || 45;
     const availableSlotsMap = new Map<string, string[]>(); // time "11:00" -> staffIds[]
 
     for (const master of eligibleStaff) {
-      const schedule = master.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek);
-      if (!schedule || schedule.isDayOff) {
+      let schedule: any = master.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek);
+
+      // Если в БД еще нет сохраненного расписания для этого дня — используем стандартный рабочий график:
+      // Пн-Сб: 09:00 - 20:00, Вс: 10:00 - 18:00
+      if (!schedule) {
+        schedule = {
+          dayOfWeek,
+          startTime: dayOfWeek === 0 ? "10:00" : "09:00",
+          endTime: dayOfWeek === 0 ? "18:00" : "20:00",
+          isDayOff: false,
+          breaks: [],
+        };
+      }
+
+      if (schedule.isDayOff) {
         continue;
       }
 
@@ -111,6 +140,11 @@ export async function GET(
       for (let min = workStartMinutes; min + durationMin <= workEndMinutes; min += 30) {
         const slotStart = min;
         const slotEnd = min + durationMin;
+
+        // Если это сегодняшний день, не предлагаем слоты, которые уже начались или начнутся менее чем через 15 минут
+        if (isToday && slotStart <= currentTashkentMinutes + 15) {
+          continue;
+        }
 
         // Проверка на пересечение с перерывами
         const hasBreakConflict = breakIntervals.some(
