@@ -30,8 +30,8 @@ export async function GET(
       return NextResponse.json({ schedules: DEFAULT_DAYS });
     }
 
-    const formatted = DEFAULT_DAYS.map((def) => {
-      const found = schedules.find((s) => s.dayOfWeek === def.dayOfWeek);
+    const formatted = DEFAULT_DAYS.map((def: any) => {
+      const found = schedules.find((s: any) => s.dayOfWeek === def.dayOfWeek);
       if (found) {
         const brk = found.breaks[0];
         return {
