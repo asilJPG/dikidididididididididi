@@ -211,6 +211,78 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
     }
   }, [isBookingOpen, step, slug, selectedService, selectedStaff, selectedDate]);
 
+  // 1. Универсальный список категорий и услуг:
+  // Если у каких-то услуг нет категории (или categories пусто), объединяем все услуги
+  const effectiveCategories = useMemo(() => {
+    if (!salon) return [];
+
+    const cats = (salon.categories || []).map((c: any) => ({
+      ...c,
+      services: [...(c.services || [])],
+    }));
+
+    const categorizedServiceIds = new Set(
+      cats.flatMap((c: any) => c.services.map((s: any) => s.id))
+    );
+    const uncategorizedServices = (salon.services || []).filter(
+      (s: any) => !categorizedServiceIds.has(s.id)
+    );
+
+    if (uncategorizedServices.length > 0) {
+      if (cats.length > 0) {
+        cats[0].services = [...cats[0].services, ...uncategorizedServices];
+      } else {
+        cats.push({
+          id: "default-category",
+          nameRu: "Основные услуги",
+          sortOrder: 0,
+          services: uncategorizedServices,
+        });
+      }
+    }
+
+    return cats;
+  }, [salon]);
+
+  // 2. Все услуги заведения плоским списком
+  const allServices: Service[] = useMemo(() => {
+    if (!salon) return [];
+    if (salon.services && salon.services.length > 0) return salon.services;
+    return effectiveCategories.flatMap((c: any) => c.services || []);
+  }, [salon, effectiveCategories]);
+
+  // 3. Услуги, доступные для бронирования (с учетом выбранного мастера)
+  const selectableServices: Service[] = useMemo(() => {
+    if (!allServices || allServices.length === 0) return [];
+    if (selectedStaff && selectedStaff !== "any") {
+      return allServices.filter((srv: any) => {
+        if (Array.isArray(srv.staffServices) && srv.staffServices.length > 0) {
+          return srv.staffServices.some((ss: any) => ss.staffId === selectedStaff.id);
+        }
+        return true;
+      });
+    }
+    return allServices;
+  }, [allServices, selectedStaff]);
+
+  // 4. Мастера, доступные для выбранной услуги
+  const selectableStaff: Staff[] = useMemo(() => {
+    if (!salon?.staff) return [];
+    const staffServices = selectedService?.staffServices;
+    if (staffServices && staffServices.length > 0) {
+      return salon.staff.filter((m: any) =>
+        staffServices.some((ss: any) => ss.staffId === m.id)
+      );
+    }
+    return salon.staff;
+  }, [salon?.staff, selectedService]);
+
+  // 5. Фильтрация категорий на витрине
+  const displayedCategories =
+    selectedCategory === "all"
+      ? effectiveCategories
+      : effectiveCategories.filter((c: any) => c.id === selectedCategory);
+
   // Быстрый запуск записи на конкретную услугу
   const handleStartBookingService = (service: Service) => {
     setSelectedService(service);
@@ -350,78 +422,6 @@ END:VCALENDAR`;
       </div>
     );
   }
-
-  // 1. Универсальный список категорий и услуг:
-  // Если у каких-то услуг нет категории (или categories пусто), объединяем все услуги
-  const effectiveCategories = useMemo(() => {
-    if (!salon) return [];
-
-    const cats = (salon.categories || []).map((c: any) => ({
-      ...c,
-      services: [...(c.services || [])],
-    }));
-
-    const categorizedServiceIds = new Set(
-      cats.flatMap((c: any) => c.services.map((s: any) => s.id))
-    );
-    const uncategorizedServices = (salon.services || []).filter(
-      (s: any) => !categorizedServiceIds.has(s.id)
-    );
-
-    if (uncategorizedServices.length > 0) {
-      if (cats.length > 0) {
-        cats[0].services = [...cats[0].services, ...uncategorizedServices];
-      } else {
-        cats.push({
-          id: "default-category",
-          nameRu: "Основные услуги",
-          sortOrder: 0,
-          services: uncategorizedServices,
-        });
-      }
-    }
-
-    return cats;
-  }, [salon]);
-
-  // 2. Все услуги заведения плоским списком
-  const allServices: Service[] = useMemo(() => {
-    if (!salon) return [];
-    if (salon.services && salon.services.length > 0) return salon.services;
-    return effectiveCategories.flatMap((c: any) => c.services || []);
-  }, [salon, effectiveCategories]);
-
-  // 3. Услуги, доступные для бронирования (с учетом выбранного мастера)
-  const selectableServices: Service[] = useMemo(() => {
-    if (!allServices || allServices.length === 0) return [];
-    if (selectedStaff && selectedStaff !== "any") {
-      return allServices.filter((srv: any) => {
-        if (Array.isArray(srv.staffServices) && srv.staffServices.length > 0) {
-          return srv.staffServices.some((ss: any) => ss.staffId === selectedStaff.id);
-        }
-        return true;
-      });
-    }
-    return allServices;
-  }, [allServices, selectedStaff]);
-
-  // 4. Мастера, доступные для выбранной услуги
-  const selectableStaff: Staff[] = useMemo(() => {
-    if (!salon?.staff) return [];
-    const staffServices = selectedService?.staffServices;
-    if (staffServices && staffServices.length > 0) {
-      return salon.staff.filter((m: any) =>
-        staffServices.some((ss: any) => ss.staffId === m.id)
-      );
-    }
-    return salon.staff;
-  }, [salon?.staff, selectedService]);
-
-  // 5. Фильтрация категорий на витрине
-  const displayedCategories =
-    selectedCategory === "all"
-      ? effectiveCategories
-      : effectiveCategories.filter((c: any) => c.id === selectedCategory);
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
