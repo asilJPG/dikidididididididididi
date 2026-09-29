@@ -3,6 +3,7 @@ import { MapPin, ChevronRight } from "lucide-react";
 import { prisma } from "@dikidi/database";
 import { MarketplaceClient } from "./marketplace-client";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const dynamic = "force-dynamic";
 
@@ -57,23 +58,8 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* Футер */}
-      <footer className="border-t border-black/[0.06] bg-white py-8 px-6 text-xs text-neutral-400">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 DIKIDI UZ. Платформа онлайн-записи и автоматизации бизнеса в Узбекистане.</p>
-          <div className="flex items-center gap-4 text-neutral-500">
-            <Link href="/business" className="hover:text-neutral-900 transition-colors">
-              DIKIDI Business
-            </Link>
-            <span>·</span>
-            <Link href="/login" className="hover:text-neutral-900 transition-colors">
-              Вход в CRM
-            </Link>
-            <span>·</span>
-            <span>Ташкент, Самарканд, Бухара</span>
-          </div>
-        </div>
-      </footer>
+      {/* Единый брендовый футер */}
+      <Footer />
     </div>
   );
 }

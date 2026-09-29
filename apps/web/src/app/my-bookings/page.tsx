@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { formatUZS, formatPhoneUZ, formatTashkentTime } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export default function MyBookingsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -681,6 +682,9 @@ END:VCALENDAR`;
           </div>
         </div>
       )}
+
+      {/* Единый брендовый футер */}
+      <Footer />
     </div>
   );
 }

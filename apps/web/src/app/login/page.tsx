@@ -144,24 +144,29 @@ export default function LoginPage() {
       <header className="max-w-md w-full mx-auto flex items-center justify-between">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-950 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> На главную
         </Link>
-        <span className="text-xs font-semibold tracking-tight text-neutral-900">
-          DIKIDI <span className="text-neutral-400">BUSINESS</span>
-        </span>
+        <Link href="/" className="flex items-center gap-1.5">
+          <span className="font-black text-sm tracking-tight text-neutral-950">
+            DIKIDI
+          </span>
+          <span className="text-[9px] font-bold uppercase px-1 py-0.2 rounded bg-neutral-100 text-neutral-600">
+            UZ
+          </span>
+        </Link>
       </header>
 
       {/* Центральная карточка */}
       <main className="max-w-sm w-full mx-auto my-auto py-10">
         <div className="bg-white rounded-3xl p-8 border border-black/[0.08] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] space-y-6">
           <div className="space-y-1.5 text-center">
-            <h1 className="text-xl font-semibold tracking-[-0.02em] text-neutral-900">
-              Вход для партнеров
+            <h1 className="text-xl font-bold tracking-tight text-neutral-950">
+              Вход в аккаунт
             </h1>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              Личный кабинет владельца салона и мастеров
+              Введите номер телефона для управления записями или работы с заведением
             </p>
           </div>
 
@@ -282,7 +287,7 @@ export default function LoginPage() {
               onClick={() => handleQuickLogin("+998901234567")}
               className="w-full py-2 px-3 rounded-xl border border-neutral-200 text-xs font-medium text-neutral-700 hover:border-neutral-900 transition-colors flex items-center justify-between"
             >
-              <span>Bro Barbershop (Владелец)</span>
+              <span>Салон «омг» (Владелец)</span>
               <span className="text-[10px] text-neutral-400">+998 90 123-45-67</span>
             </button>
           </div>
@@ -291,7 +296,7 @@ export default function LoginPage() {
 
       {/* Футер */}
       <footer className="max-w-md w-full mx-auto text-center text-[11px] text-neutral-400">
-        DIKIDI UZ Business Platform · Безопасный вход по номеру телефона
+        DIKIDI UZ · Безопасный вход по номеру телефона в Узбекистане
       </footer>
     </div>
   );

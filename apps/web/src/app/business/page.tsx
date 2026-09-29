@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Footer } from "@/components/Footer";
 import {
   Calendar,
   Send,
@@ -146,11 +147,10 @@ export default function BusinessLandingPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/b/bro-barbershop"
-              target="_blank"
+              href="/"
               className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200/80 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
             >
-              <span>Посмотреть виджет клиента</span>
+              <span>Посмотреть каталог клиентов</span>
             </Link>
           </div>
         </section>
@@ -247,21 +247,8 @@ export default function BusinessLandingPage() {
         </section>
       </main>
 
-      {/* Футер */}
-      <footer className="border-t border-black/[0.06] bg-white py-8 px-6 text-xs text-neutral-400">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 DIKIDI Business UZ. Система управления сферой услуг в Узбекистане.</p>
-          <div className="flex items-center gap-4 text-neutral-500">
-            <Link href="/" className="hover:text-neutral-900 transition-colors">
-              Каталог для клиентов
-            </Link>
-            <span>·</span>
-            <Link href="/login" className="hover:text-neutral-900 transition-colors">
-              Вход для партнеров
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Единый брендовый футер */}
+      <Footer />
     </div>
   );
 }
