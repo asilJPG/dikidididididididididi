@@ -4,9 +4,27 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
+function getDatabaseUrl(): string | undefined {
+  let url = process.env.DATABASE_URL;
+  if (!url) return undefined;
+
+  // Автоматически перенаправляем прямой IPv6-хост Supabase на рабочий IPv4-пулер для Vercel / AWS Lambda
+  if (url.includes("db.rpxowoodkjdjhouppiky.supabase.co")) {
+    url = url.replace("db.rpxowoodkjdjhouppiky.supabase.co", "aws-1-ap-southeast-1.pooler.supabase.com");
+    url = url.replace("://postgres:", "://postgres.rpxowoodkjdjhouppiky:");
+    if (!url.includes("sslmode=")) {
+      url += (url.includes("?") ? "&" : "?") + "sslmode=require";
+    }
+  }
+  return url;
+}
+
+const dbUrl = getDatabaseUrl();
+
 export const prisma =
   global.prisma ||
   new PrismaClient({
+    datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 
