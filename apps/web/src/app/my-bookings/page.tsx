@@ -22,8 +22,12 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { formatUZS, formatPhoneUZ, formatTashkentTime } from "@/lib/utils";
+import { Navbar } from "@/components/Navbar";
 
 export default function MyBookingsPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const [phone, setPhone] = useState("");
   const [searchedPhone, setSearchedPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,14 +55,17 @@ export default function MyBookingsPage() {
       const storedUser = localStorage.getItem("dikidi_user");
       let initialPhone = "";
 
-      if (stored) {
-        initialPhone = stored;
-      } else if (storedUser) {
+      if (storedUser) {
         try {
           const u = JSON.parse(storedUser);
+          setCurrentUser(u);
           if (u.phone) initialPhone = u.phone;
         } catch (e) {}
+      } else if (stored) {
+        initialPhone = stored;
       }
+
+      setIsLoaded(true);
 
       if (initialPhone) {
         setPhone(initialPhone);
@@ -235,44 +242,46 @@ END:VCALENDAR`;
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
-      {/* Шапка */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
-        <div className="max-w-4xl mx-auto px-5 h-14 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> На главную
-          </Link>
-
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-semibold text-base tracking-tight text-neutral-900">
-              DIKIDI
-            </span>
-            <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-black/[0.06] text-neutral-600">
-              UZ
-            </span>
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className="text-xs font-semibold px-3 py-1 rounded-full bg-black/[0.05] hover:bg-neutral-900 hover:text-white transition-all text-neutral-700"
-          >
-            Для бизнеса
-          </Link>
-        </div>
-      </header>
+      {/* Навигационная панель */}
+      <Navbar />
 
       <main className="flex-1 max-w-4xl mx-auto px-5 py-8 w-full space-y-6">
-        {/* Заголовок */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
-            Мои записи и визиты
-          </h1>
-          <p className="text-xs text-neutral-500">
-            Управляйте вашими бронированиями, переносите или отменяйте визиты, оставляйте отзывы
-          </p>
-        </div>
+        {!isLoaded ? (
+          <div className="w-full h-64 bg-white rounded-3xl animate-pulse" />
+        ) : !currentUser ? (
+          /* ================= НЕ АВТОРИЗОВАН ================= */
+          <div className="bg-white p-8 sm:p-12 rounded-3xl border border-black/[0.06] text-center space-y-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] max-w-md mx-auto my-12">
+            <div className="w-16 h-16 rounded-3xl bg-neutral-100 flex items-center justify-center mx-auto text-neutral-900 shadow-inner">
+              <Calendar className="w-8 h-8 text-neutral-900" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-neutral-950 tracking-tight">
+                Войдите в аккаунт
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                Чтобы просматривать запланированные визиты, переносить время или отменять бронирования, войдите по номеру телефона
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className="w-full h-12 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+            >
+              <User className="w-4 h-4" />
+              <span>Войти по номеру телефона</span>
+            </Link>
+          </div>
+        ) : (
+          /* ================= АВТОРИЗОВАННЫЙ КЛИЕНТ ================= */
+          <div className="space-y-6">
+            {/* Заголовок */}
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
+                Мои записи и визиты
+              </h1>
+              <p className="text-xs text-neutral-500">
+                Управляйте вашими бронированиями, переносите или отменяйте визиты, оставляйте отзывы
+              </p>
+            </div>
 
         {/* Форма поиска по номеру телефона */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
@@ -566,6 +575,8 @@ END:VCALENDAR`;
                 )}
               </div>
             )}
+          </div>
+        )}
           </div>
         )}
       </main>

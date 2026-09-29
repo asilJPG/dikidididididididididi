@@ -6,3 +6,4 @@ dist
 dev.db-journal
 .DS_Store
 .expo
+*.tsbuildinfo
