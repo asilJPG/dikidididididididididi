@@ -511,26 +511,26 @@ export default function DashboardPage() {
 
   // Финансовые расчеты
   const completedAppointments = appointments.filter(
-    (a) => a.status === "COMPLETED" || a.paymentStatus === "PAID"
+    (a: any) => a.status === "COMPLETED" || a.paymentStatus === "PAID"
   );
-  const totalRevenue = completedAppointments.reduce((sum, a) => sum + a.price, 0);
+  const totalRevenue = completedAppointments.reduce((sum: number, a: any) => sum + a.price, 0);
 
   const cashRevenue = completedAppointments
-    .filter((a) => !a.paymentMethod || a.paymentMethod === "CASH")
-    .reduce((sum, a) => sum + a.price, 0);
+    .filter((a: any) => !a.paymentMethod || a.paymentMethod === "CASH")
+    .reduce((sum: number, a: any) => sum + a.price, 0);
 
   const onlineRevenue = completedAppointments
-    .filter((a) => a.paymentMethod === "CLICK" || a.paymentMethod === "PAYME")
-    .reduce((sum, a) => sum + a.price, 0);
+    .filter((a: any) => a.paymentMethod === "CLICK" || a.paymentMethod === "PAYME")
+    .reduce((sum: number, a: any) => sum + a.price, 0);
 
   const terminalRevenue = completedAppointments
-    .filter((a) => a.paymentMethod === "TERMINAL")
-    .reduce((sum, a) => sum + a.price, 0);
+    .filter((a: any) => a.paymentMethod === "TERMINAL")
+    .reduce((sum: number, a: any) => sum + a.price, 0);
 
   // Расчет зарплат каждого мастера
   const staffPayroll = (salon?.staff || []).map((m: any) => {
-    const staffAppts = completedAppointments.filter((a) => a.staffId === m.id);
-    const staffGross = staffAppts.reduce((sum, a) => sum + a.price, 0);
+    const staffAppts = completedAppointments.filter((a: any) => a.staffId === m.id);
+    const staffGross = staffAppts.reduce((sum: number, a: any) => sum + a.price, 0);
     const commission = m.commissionPercent || 40;
     const earned = Math.round((staffGross * commission) / 100);
     return {

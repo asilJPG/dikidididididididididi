@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     });
     if (salonReviews.length > 0) {
       const avg =
-        salonReviews.reduce((sum, r) => sum + r.rating, 0) / salonReviews.length;
+        salonReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / salonReviews.length;
       await prisma.salon.update({
         where: { id: appt.salonId },
         data: {
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       });
       if (staffReviews.length > 0) {
         const staffAvg =
-          staffReviews.reduce((sum, r) => sum + r.rating, 0) /
+          staffReviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
           staffReviews.length;
         await prisma.staff.update({
           where: { id: appt.staffId },
