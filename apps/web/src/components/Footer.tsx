@@ -80,7 +80,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/business" className="hover:text-neutral-950 transition-colors">
+                <Link href="/business/register" className="hover:text-neutral-950 transition-colors">
                   Подключить салон
                 </Link>
               </li>

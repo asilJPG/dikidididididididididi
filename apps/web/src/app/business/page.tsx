@@ -140,17 +140,17 @@ export default function BusinessLandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link
-              href="/login"
+              href="/business/register"
               className="w-full sm:w-auto h-12 px-7 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] active:scale-[0.985]"
             >
               <span>Подключить свой бизнес</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/"
+              href="/login"
               className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200/80 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
             >
-              <span>Посмотреть каталог клиентов</span>
+              <span>Войти в CRM</span>
             </Link>
           </div>
         </section>
@@ -237,13 +237,21 @@ export default function BusinessLandingPage() {
             </p>
           </div>
 
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center h-12 px-8 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold transition-all gap-2 shadow-sm"
-          >
-            <span>Войти в DIKIDI Business</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+            <Link
+              href="/business/register"
+              className="inline-flex items-center justify-center h-12 px-8 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold transition-all gap-2 shadow-sm"
+            >
+              <span>Подключить салон бесплатно</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center h-12 px-6 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold transition-all"
+            >
+              <span>Войти в аккаунт</span>
+            </Link>
+          </div>
         </section>
       </main>
 
