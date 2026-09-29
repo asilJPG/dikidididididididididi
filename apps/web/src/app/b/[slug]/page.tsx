@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -37,6 +37,7 @@ interface Service {
   description?: string | null;
   durationMinutes: number;
   price: number;
+  staffServices?: { staffId: string }[];
 }
 
 interface Category {
@@ -52,6 +53,7 @@ interface Staff {
   avatarUrl?: string | null;
   rating: number;
   reviewCount: number;
+  staffServices?: { serviceId: string }[];
 }
 
 interface Salon {
@@ -65,6 +67,7 @@ interface Salon {
   rating: number;
   reviewCount: number;
   categories: Category[];
+  services?: Service[];
   staff: Staff[];
 }
 
@@ -211,6 +214,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   // Быстрый запуск записи на конкретную услугу
   const handleStartBookingService = (service: Service) => {
     setSelectedService(service);
+    setSelectedStaff("any");
     setStep(2);
     setIsBookingOpen(true);
   };
@@ -218,6 +222,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   // Быстрый запуск записи к конкретному мастеру
   const handleStartBookingStaff = (master: Staff) => {
     setSelectedStaff(master);
+    setSelectedService(null);
     setStep(1);
     setIsBookingOpen(true);
   };
@@ -346,11 +351,77 @@ END:VCALENDAR`;
     );
   }
 
-  // Фильтрация категорий
+  // 1. Универсальный список категорий и услуг:
+  // Если у каких-то услуг нет категории (или categories пусто), объединяем все услуги
+  const effectiveCategories = useMemo(() => {
+    if (!salon) return [];
+
+    const cats = (salon.categories || []).map((c: any) => ({
+      ...c,
+      services: [...(c.services || [])],
+    }));
+
+    const categorizedServiceIds = new Set(
+      cats.flatMap((c: any) => c.services.map((s: any) => s.id))
+    );
+    const uncategorizedServices = (salon.services || []).filter(
+      (s: any) => !categorizedServiceIds.has(s.id)
+    );
+
+    if (uncategorizedServices.length > 0) {
+      if (cats.length > 0) {
+        cats[0].services = [...cats[0].services, ...uncategorizedServices];
+      } else {
+        cats.push({
+          id: "default-category",
+          nameRu: "Основные услуги",
+          sortOrder: 0,
+          services: uncategorizedServices,
+        });
+      }
+    }
+
+    return cats;
+  }, [salon]);
+
+  // 2. Все услуги заведения плоским списком
+  const allServices: Service[] = useMemo(() => {
+    if (!salon) return [];
+    if (salon.services && salon.services.length > 0) return salon.services;
+    return effectiveCategories.flatMap((c: any) => c.services || []);
+  }, [salon, effectiveCategories]);
+
+  // 3. Услуги, доступные для бронирования (с учетом выбранного мастера)
+  const selectableServices: Service[] = useMemo(() => {
+    if (!allServices || allServices.length === 0) return [];
+    if (selectedStaff && selectedStaff !== "any") {
+      return allServices.filter((srv: any) => {
+        if (Array.isArray(srv.staffServices) && srv.staffServices.length > 0) {
+          return srv.staffServices.some((ss: any) => ss.staffId === selectedStaff.id);
+        }
+        return true;
+      });
+    }
+    return allServices;
+  }, [allServices, selectedStaff]);
+
+  // 4. Мастера, доступные для выбранной услуги
+  const selectableStaff: Staff[] = useMemo(() => {
+    if (!salon?.staff) return [];
+    const staffServices = selectedService?.staffServices;
+    if (staffServices && staffServices.length > 0) {
+      return salon.staff.filter((m: any) =>
+        staffServices.some((ss: any) => ss.staffId === m.id)
+      );
+    }
+    return salon.staff;
+  }, [salon?.staff, selectedService]);
+
+  // 5. Фильтрация категорий на витрине
   const displayedCategories =
     selectedCategory === "all"
-      ? salon.categories
-      : salon.categories.filter((c) => c.id === selectedCategory);
+      ? effectiveCategories
+      : effectiveCategories.filter((c: any) => c.id === selectedCategory);
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
@@ -478,7 +549,7 @@ END:VCALENDAR`;
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2 space-y-6">
               {/* Категории фильтр */}
-              {salon.categories.length > 1 && (
+              {effectiveCategories.length > 1 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
                   <button
                     type="button"
@@ -491,7 +562,7 @@ END:VCALENDAR`;
                   >
                     Все услуги
                   </button>
-                  {salon.categories.map((c) => (
+                  {effectiveCategories.map((c: any) => (
                     <button
                       key={c.id}
                       type="button"
@@ -510,51 +581,68 @@ END:VCALENDAR`;
 
               {/* Список услуг по категориям */}
               <div className="space-y-6">
-                {displayedCategories.map((cat) => (
-                  <div key={cat.id} className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-sm space-y-4">
-                    <h3 className="text-sm font-bold text-neutral-950 uppercase tracking-wider text-neutral-500">
-                      {cat.nameRu}
-                    </h3>
-                    <div className="divide-y divide-neutral-100">
-                      {cat.services.map((srv) => (
-                        <div
-                          key={srv.id}
-                          className="py-4 first:pt-0 last:pb-0 flex items-start sm:items-center justify-between gap-4 group"
-                        >
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-neutral-900 group-hover:text-neutral-950 transition-colors">
-                              {srv.nameRu}
-                            </h4>
-                            {srv.description && (
-                              <p className="text-xs text-neutral-500 max-w-md leading-relaxed">
-                                {srv.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 font-medium">
-                              <Clock className="w-3 h-3" />
-                              <span>{srv.durationMinutes} мин</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 shrink-0">
-                            <div className="text-right">
-                              <span className="text-sm font-black text-neutral-950">
-                                {formatUZS(srv.price)}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleStartBookingService(srv)}
-                              className="h-9 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-all shadow-sm active:scale-95"
-                            >
-                              Выбрать
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                {displayedCategories.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-10 border border-black/[0.06] text-center space-y-2">
+                    <Scissors className="w-8 h-8 text-neutral-300 mx-auto" />
+                    <p className="text-sm font-bold text-neutral-800">Список услуг обновляется</p>
+                    <p className="text-xs text-neutral-400">Скоро здесь появятся доступные процедуры заведения</p>
                   </div>
-                ))}
+                ) : (
+                  displayedCategories.map((cat: any) => (
+                    <div key={cat.id} className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-sm space-y-4">
+                      <h3 className="text-sm font-bold text-neutral-950 uppercase tracking-wider text-neutral-500">
+                        {cat.nameRu}
+                      </h3>
+                      <div className="divide-y divide-neutral-100">
+                        {cat.services.map((srv: any) => (
+                          <div
+                            key={srv.id}
+                            className="py-4 first:pt-0 last:pb-0 flex items-start sm:items-center justify-between gap-4 group"
+                          >
+                            <div className="space-y-1">
+                              <h4 className="text-sm font-bold text-neutral-900 group-hover:text-neutral-950 transition-colors">
+                                {srv.nameRu}
+                              </h4>
+                              {srv.description && (
+                                <p className="text-xs text-neutral-500 max-w-md leading-relaxed">
+                                  {srv.description}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 flex-wrap text-[11px] text-neutral-400 font-medium">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{srv.durationMinutes} мин</span>
+                                </span>
+                                {Array.isArray(srv.staffServices) && srv.staffServices.length > 0 && srv.staffServices.length < (salon?.staff?.length || 0) && (
+                                  <span className="text-[10px] text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-md font-semibold">
+                                    {srv.staffServices.length === 1
+                                      ? salon?.staff?.find((m: any) => m.id === srv.staffServices[0].staffId)?.fullName || "1 мастер"
+                                      : `${srv.staffServices.length} мастера`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 shrink-0">
+                              <div className="text-right">
+                                <span className="text-sm font-black text-neutral-950">
+                                  {formatUZS(srv.price)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleStartBookingService(srv)}
+                                className="h-9 px-4 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs transition-all shadow-sm active:scale-95"
+                              >
+                                Выбрать
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -758,13 +846,41 @@ END:VCALENDAR`;
                 {/* ШАГ 1: ВЫБОР УСЛУГИ */}
                 {step === 1 && (
                   <div className="space-y-4">
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                      Выберите желаемую процедуру
-                    </p>
-                    <div className="space-y-2">
-                      {salon.categories.map((c) =>
-                        c.services.map((srv) => {
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                        Выберите желаемую процедуру
+                      </p>
+                      {selectedStaff && selectedStaff !== "any" && (
+                        <span className="text-[11px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full">
+                          Мастер: {selectedStaff.fullName}
+                        </span>
+                      )}
+                    </div>
+
+                    {selectableServices.length === 0 ? (
+                      <div className="bg-neutral-50 rounded-2xl p-6 text-center border border-neutral-200/80 space-y-3">
+                        <Scissors className="w-8 h-8 text-neutral-400 mx-auto" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-neutral-800">
+                            У выбранного мастера нет доступных процедур
+                          </p>
+                          <p className="text-[11px] text-neutral-400">
+                            Показать услуги всех мастеров заведения?
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStaff("any")}
+                          className="px-4 py-2 rounded-xl bg-neutral-900 text-white text-xs font-semibold"
+                        >
+                          Показать услуги всех мастеров
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectableServices.map((srv: any) => {
                           const isSelected = selectedService?.id === srv.id;
+                          const assignedStaffIds = (srv.staffServices || []).map((ss: any) => ss.staffId);
                           return (
                             <div
                               key={srv.id}
@@ -779,9 +895,18 @@ END:VCALENDAR`;
                                 <p className="text-xs font-bold text-neutral-900">
                                   {srv.nameRu}
                                 </p>
-                                <span className="text-[11px] text-neutral-400">
-                                  {srv.durationMinutes} мин
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-neutral-400">
+                                    {srv.durationMinutes} мин
+                                  </span>
+                                  {assignedStaffIds.length > 0 && assignedStaffIds.length < (salon?.staff?.length || 0) && (
+                                    <span className="text-[10px] text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded font-medium">
+                                      {assignedStaffIds.length === 1
+                                        ? salon?.staff?.find((m: any) => m.id === assignedStaffIds[0])?.fullName || "1 мастер"
+                                        : `${assignedStaffIds.length} мастера`}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-2.5">
                                 <span className="text-xs font-bold text-neutral-950">
@@ -799,18 +924,25 @@ END:VCALENDAR`;
                               </div>
                             </div>
                           );
-                        })
-                      )}
-                    </div>
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* ШАГ 2: ВЫБОР МАСТЕРА */}
                 {step === 2 && (
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                      Выберите мастера
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                        Выберите мастера
+                      </p>
+                      {selectedService && (
+                        <span className="text-[11px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full truncate max-w-[200px]">
+                          {selectedService.nameRu}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Любой мастер */}
                     <div
@@ -841,39 +973,50 @@ END:VCALENDAR`;
                       </div>
                     </div>
 
-                    {salon.staff.map((m) => {
-                      const isSelected = selectedStaff !== "any" && selectedStaff.id === m.id;
-                      return (
-                        <div
-                          key={m.id}
-                          onClick={() => setSelectedStaff(m)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                            isSelected
-                              ? "border-neutral-950 bg-neutral-50 shadow-sm"
-                              : "border-neutral-200/80 bg-white hover:border-neutral-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
-                              {m.fullName.slice(0, 1)}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-neutral-950">{m.fullName}</p>
-                              <p className="text-[11px] text-neutral-500">{m.specialty}</p>
-                            </div>
-                          </div>
+                    {selectableStaff.length === 0 ? (
+                      <div className="bg-neutral-50 rounded-2xl p-5 text-center border border-neutral-200/80">
+                        <p className="text-xs font-bold text-neutral-800">
+                          Для этой процедуры пока нет назначенных мастеров
+                        </p>
+                        <p className="text-[11px] text-neutral-400 mt-1">
+                          Пожалуйста, выберите другую процедуру
+                        </p>
+                      </div>
+                    ) : (
+                      selectableStaff.map((m) => {
+                        const isSelected = selectedStaff !== "any" && selectedStaff?.id === m.id;
+                        return (
                           <div
-                            className={`w-4 h-4 rounded-full flex items-center justify-center border ${
+                            key={m.id}
+                            onClick={() => setSelectedStaff(m)}
+                            className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                               isSelected
-                                ? "bg-neutral-950 border-neutral-950 text-white"
-                                : "border-neutral-300"
+                                ? "border-neutral-950 bg-neutral-50 shadow-sm"
+                                : "border-neutral-200/80 bg-white hover:border-neutral-300"
                             }`}
                           >
-                            {isSelected && <Check className="w-2.5 h-2.5" />}
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
+                                {m.fullName.slice(0, 1)}
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-neutral-950">{m.fullName}</p>
+                                <p className="text-[11px] text-neutral-500">{m.specialty}</p>
+                              </div>
+                            </div>
+                            <div
+                              className={`w-4 h-4 rounded-full flex items-center justify-center border ${
+                                isSelected
+                                  ? "bg-neutral-950 border-neutral-950 text-white"
+                                  : "border-neutral-300"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-2.5 h-2.5" />}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 )}
 

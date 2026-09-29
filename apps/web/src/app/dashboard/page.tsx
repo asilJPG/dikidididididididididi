@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [serviceNameRu, setServiceNameRu] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDuration, setServiceDuration] = useState("45");
+  const [serviceStaffIds, setServiceStaffIds] = useState<string[]>([]);
   const [savingService, setSavingService] = useState(false);
 
   // Управление мастерами
@@ -311,6 +312,7 @@ export default function DashboardPage() {
             nameRu: serviceNameRu,
             price: Number(servicePrice),
             durationMinutes: Number(serviceDuration),
+            staffIds: serviceStaffIds,
           }),
         });
       } else {
@@ -321,6 +323,7 @@ export default function DashboardPage() {
             nameRu: serviceNameRu,
             price: Number(servicePrice),
             durationMinutes: Number(serviceDuration),
+            staffIds: serviceStaffIds,
           }),
         });
       }
@@ -329,6 +332,7 @@ export default function DashboardPage() {
       setServiceNameRu("");
       setServicePrice("");
       setServiceDuration("45");
+      setServiceStaffIds([]);
       fetchSalonData();
     } catch (err) {
       console.error(err);
@@ -713,6 +717,7 @@ export default function DashboardPage() {
                   setServiceNameRu("");
                   setServicePrice("");
                   setServiceDuration("45");
+                  setServiceStaffIds(salon?.staff?.map((st: any) => st.id) || []);
                   setShowServiceModal(true);
                 }}
                 className="h-9 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
@@ -1063,6 +1068,7 @@ export default function DashboardPage() {
                       setServiceNameRu("");
                       setServicePrice("");
                       setServiceDuration("45");
+                      setServiceStaffIds(salon?.staff?.map((st: any) => st.id) || []);
                       setShowServiceModal(true);
                     }}
                     className="px-3 py-1.5 bg-neutral-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1 hover:bg-neutral-800 transition-colors"
@@ -1072,41 +1078,68 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  {salon?.services?.map((srv: any) => (
-                    <div
-                      key={srv.id}
-                      className="p-3.5 rounded-xl border border-neutral-100 bg-neutral-50/50 flex items-center justify-between gap-3"
-                    >
-                      <div>
-                        <p className="text-xs font-bold text-neutral-900">{srv.nameRu}</p>
-                        <p className="text-[11px] text-neutral-400">
-                          {srv.durationMinutes} мин · {formatUZS(srv.price)}
-                        </p>
+                  {salon?.services?.map((srv: any) => {
+                    const assignedStaffIds = (srv.staffServices || []).map((ss: any) => ss.staffId);
+                    return (
+                      <div
+                        key={srv.id}
+                        className="p-3.5 rounded-xl border border-neutral-100 bg-neutral-50/50 flex items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-neutral-900">{srv.nameRu}</p>
+                          <p className="text-[11px] text-neutral-400">
+                            {srv.durationMinutes} мин · {formatUZS(srv.price)}
+                          </p>
+                          {/* Бейджи мастеров */}
+                          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                            <span className="text-[10px] font-semibold text-neutral-400">Мастера:</span>
+                            {assignedStaffIds.length > 0 ? (
+                              assignedStaffIds.map((stId: string) => {
+                                const foundMaster = salon?.staff?.find((m: any) => m.id === stId);
+                                return (
+                                  <span
+                                    key={stId}
+                                    className="px-2 py-0.5 rounded-md bg-white border border-neutral-200/80 text-neutral-700 text-[10px] font-semibold"
+                                  >
+                                    {foundMaster?.fullName || "Мастер"}
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <span className="text-[10px] text-neutral-400 italic">Все мастера</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingService(srv);
+                              setServiceNameRu(srv.nameRu);
+                              setServicePrice(String(srv.price));
+                              setServiceDuration(String(srv.durationMinutes));
+                              setServiceStaffIds(
+                                Array.isArray(srv.staffServices) && srv.staffServices.length > 0
+                                  ? srv.staffServices.map((ss: any) => ss.staffId)
+                                  : salon?.staff?.map((st: any) => st.id) || []
+                              );
+                              setShowServiceModal(true);
+                            }}
+                            className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/60 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteService(srv.id)}
+                            className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingService(srv);
-                            setServiceNameRu(srv.nameRu);
-                            setServicePrice(String(srv.price));
-                            setServiceDuration(String(srv.durationMinutes));
-                            setShowServiceModal(true);
-                          }}
-                          className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/60 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteService(srv.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1720,6 +1753,79 @@ export default function DashboardPage() {
                     <option value="120">120 минут</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Выбор мастеров, которые могут выполнять данную услугу */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-semibold text-neutral-700 block">
+                    Кто выполняет услугу (мастера) *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (serviceStaffIds.length === (salon?.staff?.length || 0)) {
+                        setServiceStaffIds([]);
+                      } else {
+                        setServiceStaffIds(salon?.staff?.map((st: any) => st.id) || []);
+                      }
+                    }}
+                    className="text-[10px] text-neutral-500 hover:text-neutral-900 font-medium"
+                  >
+                    {serviceStaffIds.length === (salon?.staff?.length || 0) ? "Снять все" : "Выбрать всех"}
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 max-h-44 overflow-y-auto p-2.5 bg-neutral-50 rounded-2xl border border-neutral-200">
+                  {salon?.staff?.length === 0 ? (
+                    <p className="text-neutral-400 text-center py-2">Сначала добавьте хотя бы одного мастера</p>
+                  ) : (
+                    salon?.staff?.map((master: any) => {
+                      const isChecked = serviceStaffIds.includes(master.id);
+                      return (
+                        <label
+                          key={master.id}
+                          className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
+                            isChecked
+                              ? "bg-white border-neutral-300 shadow-xs"
+                              : "bg-transparent border-transparent hover:bg-white/60"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setServiceStaffIds([...serviceStaffIds, master.id]);
+                                } else {
+                                  setServiceStaffIds(serviceStaffIds.filter((id) => id !== master.id));
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-neutral-950 border-neutral-300 focus:ring-0 cursor-pointer"
+                            />
+                            <div>
+                              <p className="font-bold text-neutral-900">{master.fullName}</p>
+                              <p className="text-[10px] text-neutral-400">{master.specialty}</p>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                              isChecked ? "bg-emerald-50 text-emerald-700" : "text-neutral-400"
+                            }`}
+                          >
+                            {isChecked ? "Выполняет" : "Не выполняет"}
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                {serviceStaffIds.length === 0 && (
+                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                    Выберите хотя бы одного мастера, иначе клиенты не смогут записаться на эту услугу.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">

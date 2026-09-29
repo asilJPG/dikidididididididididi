@@ -18,16 +18,28 @@ export async function GET(
           include: {
             services: {
               where: { isActive: true },
+              include: {
+                staffServices: {
+                  select: { staffId: true },
+                },
+              },
             },
           },
         },
         services: {
           where: { isActive: true },
+          include: {
+            staffServices: {
+              select: { staffId: true },
+            },
+          },
         },
         staff: {
           where: { isActive: true },
           include: {
-            staffServices: true,
+            staffServices: {
+              select: { serviceId: true },
+            },
             schedules: {
               include: {
                 breaks: true,
